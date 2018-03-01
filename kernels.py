@@ -179,104 +179,104 @@ class ddSE_dt2dt1(SquaredExponential):
 #        f1 = r**2
 #        f2 = self.SE_l**2
 #        return (1/f2**2 - f1/f2**4) * np.exp(-0.5* f1/f2)
-
-	
-class Const1(kernel):
-    """
-        Constant Vc in the paper.
-    """
-    def __init__(self, Vc):
-        """
-        	Because we are "overwriting" the function __init__
-        we use this weird super function.
-        """
-        super(Const1, self).__init__(Vc)
-        self.Vc = Vc
-    	
-    def __call__(self, r):
-    	"""
-    		Not a kernel but we are defining it similarly,
-    	not sure if it is the smartest move.
-    	"""                 
-        return self.Vc
-     
-       
-class Const2(kernel):
-    """
-        Constant Vr in the paper.
-    """
-    def __init__(self, Vr):
-        """
-        	Because we are "overwriting" the function __init__
-        we use this weird super function.
-        """
-        super(Const2, self).__init__(Vr)
-        self.Vr = Vr
-    	
-    def __call__(self, r):
-    	"""
-    		Not a kernel but we are defining it similarly,
-    	not sure if it is the smartest move.
-    	"""                 
-        return self.Vr
-     
-       
-class Const3(kernel):
-    """
-        Constant Vr in the paper.
-    """
-    def __init__(self, Lc):
-        """
-        	Because we are "overwriting" the function __init__
-        we use this weird super function.
-        """
-        super(Const3, self).__init__(Lc)
-        self.Lc = Lc
-    	
-    def __call__(self, r):
-    	"""
-    		Not a kernel but we are defining it similarly,
-    	not sure if it is the smartest move.
-    	"""                 
-        return self.Lc
-        
-       
-class Const4(kernel):
-    """
-        Constant Bc in the paper.
-    """
-    def __init__(self, Bc):
-        """
-        	Because we are "overwriting" the function __init__
-        we use this weird super function.
-        """
-        super(Const4, self).__init__(Bc)
-        self.Bc = Bc
-    	
-    def __call__(self, r):
-    	"""
-    		Not a kernel but we are defining it similarly,
-    	not sure if it is the smartest move.
-    	"""                 
-        return self.Bc
-        
-       
-class Const5(kernel):
-    """
-        Constant Vr in the paper.
-    """
-    def __init__(self, Br):
-        """
-        	Because we are "overwriting" the function __init__
-        we use this weird super function.
-        """
-        super(Const5, self).__init__(Br)
-        self.Br = Br
-    	
-    def __call__(self, r):
-    	"""
-    		Not a kernel but we are defining it similarly,
-    	not sure if it is the smartest move.
-    	"""                 
-        return self.Br
-        
+#
+#	
+#class Const1(kernel):
+#    """
+#        Constant Vc in the paper.
+#    """
+#    def __init__(self, Vc):
+#        """
+#        	Because we are "overwriting" the function __init__
+#        we use this weird super function.
+#        """
+#        super(Const1, self).__init__(Vc)
+#        self.Vc = Vc
+#    	
+#    def __call__(self, r):
+#    	"""
+#    		Not a kernel but we are defining it similarly,
+#    	not sure if it is the smartest move.
+#    	"""                 
+#        return self.Vc
+#     
+#       
+#class Const2(kernel):
+#    """
+#        Constant Vr in the paper.
+#    """
+#    def __init__(self, Vr):
+#        """
+#        	Because we are "overwriting" the function __init__
+#        we use this weird super function.
+#        """
+#        super(Const2, self).__init__(Vr)
+#        self.Vr = Vr
+#    	
+#    def __call__(self, r):
+#    	"""
+#    		Not a kernel but we are defining it similarly,
+#    	not sure if it is the smartest move.
+#    	"""                 
+#        return self.Vr
+#     
+#       
+#class Const3(kernel):
+#    """
+#        Constant Vr in the paper.
+#    """
+#    def __init__(self, Lc):
+#        """
+#        	Because we are "overwriting" the function __init__
+#        we use this weird super function.
+#        """
+#        super(Const3, self).__init__(Lc)
+#        self.Lc = Lc
+#    	
+#    def __call__(self, r):
+#    	"""
+#    		Not a kernel but we are defining it similarly,
+#    	not sure if it is the smartest move.
+#    	"""                 
+#        return self.Lc
+#        
+#       
+#class Const4(kernel):
+#    """
+#        Constant Bc in the paper.
+#    """
+#    def __init__(self, Bc):
+#        """
+#        	Because we are "overwriting" the function __init__
+#        we use this weird super function.
+#        """
+#        super(Const4, self).__init__(Bc)
+#        self.Bc = Bc
+#    	
+#    def __call__(self, r):
+#    	"""
+#    		Not a kernel but we are defining it similarly,
+#    	not sure if it is the smartest move.
+#    	"""                 
+#        return self.Bc
+#        
+#       
+#class Const5(kernel):
+#    """
+#        Constant Vr in the paper.
+#    """
+#    def __init__(self, Br):
+#        """
+#        	Because we are "overwriting" the function __init__
+#        we use this weird super function.
+#        """
+#        super(Const5, self).__init__(Br)
+#        self.Br = Br
+#    	
+#    def __call__(self, r):
+#    	"""
+#    		Not a kernel but we are defining it similarly,
+#    	not sure if it is the smartest move.
+#    	"""                 
+#        return self.Br
+#        
