@@ -112,7 +112,7 @@ class dSE_dt1(SquaredExponential):
         self.SE_l = SE_l
 	
     def __call__(self, r):
-        f1 = r
+        f1 = np.abs(r)
         f2 = self.SE_l**2 
         return -f1/f2 * np.exp(-0.5* f1*f1/f2)
 

@@ -13,13 +13,13 @@ from scipy.optimize import minimize
 
 
 #defining the kernel; DO NOT TRY FOR THE QUASI PERIODIC, STILL WORKING ON IT
-kernel = 2 #1 = squared exponential, 2 = quasi periodic, else = invalid kernel
+kernel = 1 #1 = squared exponential, 2 = quasi periodic, else = invalid kernel
 
 #a = np.array([l,vc,vr,lc,bc,br]) <- THIS IS FOR THE SQUARED EXPONENTIAL
-#a = np.array([0.1, 100, 1, 10, 10, 1])
+a = np.array([0.1, 100, 1, 10, 10, 1])
 
 #a = np.array([lp,le,p,vc,vr,lc,bc,br]) <- THIS IS FOR THE QUASI PERIODIC
-a = np.array([0.01,0.01,1,1,0.1,50,2,3])
+#a = np.array([0.01,0.01,1,1,0.1,50,2,3])
 
 
 ### Example for the squared exponential  ###
@@ -57,54 +57,48 @@ print(res)
 print
 
 #### simple sample and marginalization with emcee
-runs, burns = 100, 100
-#
-#probabilistic model
-def logprob(p):
-#    print p
-    if np.any((-10 > p[1:]) + (p[1:] > 100)):
-        return -np.inf
-#
-#    if any([p[0] < -10, p[0] > np.log(10), 
-#            p[1] < -10, p[1] > np.log(100),
-#            p[2] < -10, p[2] > np.log(10),
-#            p[3] < -10, p[3] > 10,
-#            p[4] < -10, p[2] > np.log(100),
-#            p[5] < -10, p[5] > np.log(100)]):
-#        return -np.inf
-#
-    logprior = 0.0
-    return logprior + likelihood(kernel,p,t,y,yerr)
-
-#l_prior  = stats.uniform(np.exp(-10), 10 -np.exp(-10))         #[exp(-10) to 10]
-#vc_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10))         #[exp(-10) to 100]
-#vr_prior = stats.uniform(np.exp(-10), 10 -np.exp(-10))         #[exp(-10) to 10]
-#lc_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10))         #[exp(-10) to exp(10)]
-#bc_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10))         #[exp(-10) to 100]
-#br_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10))         #[exp(-10) to 100]
-#
-#
-#def from_prior():           
-#    return np.array([ l_prior.rvs(),vc_prior.rvs(),vr_prior.rvs(),
-#                         lc_prior.rvs(),bc_prior.rvs(),br_prior.rvs() ])
-#
-# Set up the sampler.
-nwalkers, ndim = 2*len(a), len(a)
-sampler = emcee.EnsembleSampler(nwalkers, ndim, logprob)
-
-# Initialize the walkers.
-p0 = a + 1e-4 * np.random.randn(nwalkers, ndim)
-#p0=[np.log(from_prior()) for i in range(nwalkers)]           
-#assert not np.isinf(map(logprob, p0)).any()
-#assert not np.isnan(map(logprob, p0)).any()
-
-print("Running burn-in")
-p0, _, _ = sampler.run_mcmc(p0, burns)
-
-print("Running production chain")
-sampler.run_mcmc(p0, runs);
-
+runs, burns = 5000, 5000
 if kernel == 1:
+    #probabilistic model
+    def logprob(p):
+        if np.any((-10 > p[1:]) + (p[1:] > 100)):
+            return -np.inf
+    #    if any([p[0] < -10, p[0] > np.log(10), 
+    #            p[1] < -10, p[1] > np.log(100),
+    #            p[2] < -10, p[2] > np.log(10),
+    #            p[3] < -10, p[3] > 10,
+    #            p[4] < -10, p[2] > np.log(100),
+    #            p[5] < -10, p[5] > np.log(100)]):
+    #        return -np.inf
+        logprior = 0.0
+        return logprior + likelihood(kernel,p,t,y,yerr)
+    
+    #l_prior  = stats.uniform(np.exp(-10), 10 -np.exp(-10))         #[exp(-10) to 10]
+    #vc_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10))         #[exp(-10) to 100]
+    #vr_prior = stats.uniform(np.exp(-10), 10 -np.exp(-10))         #[exp(-10) to 10]
+    #lc_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10))         #[exp(-10) to exp(10)]
+    #bc_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10))         #[exp(-10) to 100]
+    #br_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10))         #[exp(-10) to 100]
+    #def from_prior():           
+    #    return np.array([ l_prior.rvs(),vc_prior.rvs(),vr_prior.rvs(),
+    #                         lc_prior.rvs(),bc_prior.rvs(),br_prior.rvs() ])
+    
+    # Set up the sampler.
+    nwalkers, ndim = 2*len(a), len(a)
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, logprob)
+    
+    # Initialize the walkers.
+    p0 = a + 1e-4 * np.random.randn(nwalkers, ndim)
+    #p0=[np.log(from_prior()) for i in range(nwalkers)]           
+    #assert not np.isinf(map(logprob, p0)).any()
+    #assert not np.isnan(map(logprob, p0)).any()
+    
+    print("Running burn-in")
+    p0, _, _ = sampler.run_mcmc(p0, burns)
+    
+    print("Running production chain")
+    sampler.run_mcmc(p0, runs);
+
     #graphs
     print('graphics')
     fig, axes = pl.subplots(6, 1, sharex=True, figsize=(8, 9))
