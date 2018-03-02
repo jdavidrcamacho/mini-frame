@@ -2,28 +2,6 @@
 import kernels
 import numpy as np
 
-#def entry_parameters(a):
-#    """
-#        entry_parameters() assigns the entry parameters to their
-#    respectives kernels
-#    
-#        Parameters
-#    a = array with the important parameters
-#    
-#        Returns
-#    an array with the kernels
-#    """
-#    l,vc,vr,lc,bc,br = a
-#    return np.array([kernels.SquaredExponential(l),
-#                     kernels.dSE_dt1(l),
-#                     kernels.dSE_dt2(l),
-#                     kernels.ddSE_dt2dt1(l),
-#                     kernels.Const1(vc),
-#                     kernels.Const2(vr),
-#                     kernels.Const3(lc),
-#                     kernels.Const4(bc),
-#                     kernels.Const5(br)])
-
 def build_smallmatrix(kernel, x):
     """
         build_smallmatrix() creates the smaller covariance matrices,
@@ -44,84 +22,122 @@ def build_smallmatrix(kernel, x):
     return K
 
 
-def k11(a,x):
+def k11(kern, a, x):
     """
         Equation 18
     """
-    l,vc,vr,lc,bc,br = a
+    if kern == 1:
+        l,vc,vr,lc,bc,br = a        
+        gammagg  = build_smallmatrix(kernels.SquaredExponential(l),x) 
+        gammadgdg = build_smallmatrix(kernels.ddSE_dt2dt1(l),x)  
+        gammagdg = build_smallmatrix(kernels.dSE_dt1(l),x)  
+        gammadgg = build_smallmatrix(kernels.dSE_dt2(l),x)  
     
-    gammagg  = build_smallmatrix(kernels.SquaredExponential(l),x) 
-    gammadgdg = build_smallmatrix(kernels.ddSE_dt2dt1(l),x)  
-    gammagdg = build_smallmatrix(kernels.dSE_dt1(l),x)  
-    gammadgg = build_smallmatrix(kernels.dSE_dt2(l),x)  
-
+    if kern == 2:
+        lp,le,p,vc,vr,lc,bc,br = a
+        gammagg  = build_smallmatrix(kernels.QuasiPeriodic(lp,le,p),x) 
+        gammadgdg = build_smallmatrix(kernels.ddQP_dt2dt1(lp,le,p),x)  
+        gammagdg = build_smallmatrix(kernels.dQP_dt1(lp,le,p),x)  
+        gammadgg = build_smallmatrix(kernels.dQP_dt2(lp,le,p),x) 
+        
     return vc**2 * gammagg + vr**2* gammadgdg + vc*vr*(gammagdg + gammadgg)
     
-def k22(a,x):
+def k22(kern, a, x):
     """
         Equation 19
     """
-    l,vc,vr,lc,bc,br = a
-    
-    gammagg  = build_smallmatrix(kernels.SquaredExponential(l),x)
-    
+    if kern == 1:
+        l,vc,vr,lc,bc,br = a
+        gammagg  = build_smallmatrix(kernels.SquaredExponential(l),x)
+
+    if kern == 2:
+        lp,le,p,vc,vr,lc,bc,br = a
+        gammagg  = build_smallmatrix(kernels.QuasiPeriodic(lp,le,p),x)
+
     return lc**2 * gammagg
 
-def k33(a,x):
+def k33(kern, a, x):
     """
         Equation 20
     """
-    l,vc,vr,lc,bc,br = a  
-    
-    gammagg  = build_smallmatrix(kernels.SquaredExponential(l),x) 
-    gammadgdg = build_smallmatrix(kernels.ddSE_dt2dt1(l),x)  
-    gammagdg = build_smallmatrix(kernels.dSE_dt1(l),x)  
-    gammadgg = build_smallmatrix(kernels.dSE_dt2(l),x)  
-    
+    if kern == 1:
+        l,vc,vr,lc,bc,br = a
+        gammagg  = build_smallmatrix(kernels.SquaredExponential(l),x) 
+        gammadgdg = build_smallmatrix(kernels.ddSE_dt2dt1(l),x)  
+        gammagdg = build_smallmatrix(kernels.dSE_dt1(l),x)  
+        gammadgg = build_smallmatrix(kernels.dSE_dt2(l),x)  
+        
+    if kern == 2:
+        lp,le,p,vc,vr,lc,bc,br = a
+        gammagg  = build_smallmatrix(kernels.QuasiPeriodic(lp,le,p),x) 
+        gammadgdg = build_smallmatrix(kernels.ddQP_dt2dt1(lp,le,p),x)  
+        gammagdg = build_smallmatrix(kernels.dQP_dt1(lp,le,p),x)  
+        gammadgg = build_smallmatrix(kernels.dQP_dt2(lp,le,p),x)  
+
     return bc**2 * gammagg + br**2* gammadgdg + bc*br*(gammagdg + gammadgg)
 
-def k12(a,x):
+def k12(kern, a, x):
     """
         Equation 21
     """
-    l,vc,vr,lc,bc,br = a
-    
-    gammagg  = build_smallmatrix(kernels.SquaredExponential(l),x) 
-    gammagdg = build_smallmatrix(kernels.dSE_dt1(l),x)  
+    if kern == 1:
+        l,vc,vr,lc,bc,br = a
+        gammagg  = build_smallmatrix(kernels.SquaredExponential(l),x) 
+        gammagdg = build_smallmatrix(kernels.dSE_dt1(l),x)  
 
+    if kern == 2:
+        lp,le,p,vc,vr,lc,bc,br = a
+        gammagg  = build_smallmatrix(kernels.QuasiPeriodic(lp,le,p),x) 
+        gammagdg = build_smallmatrix(kernels.dQP_dt1(lp,le,p),x) 
+    
     return vc*lc * gammagg + vr*lc*gammagdg
 
-def k13(a,x):
+def k13(kern, a, x):
     """
         Equation 22
     """
-    l,vc,vr,lc,bc,br = a
-    
-    gammagg  = build_smallmatrix(kernels.SquaredExponential(l),x) 
-    gammadgdg = build_smallmatrix(kernels.ddSE_dt2dt1(l),x)  
-    gammagdg = build_smallmatrix(kernels.dSE_dt1(l),x)  
-    gammadgg = build_smallmatrix(kernels.dSE_dt2(l),x)  
-    
+    if kern == 1:    
+        l,vc,vr,lc,bc,br = a
+        gammagg  = build_smallmatrix(kernels.SquaredExponential(l),x) 
+        gammadgdg = build_smallmatrix(kernels.ddSE_dt2dt1(l),x)  
+        gammagdg = build_smallmatrix(kernels.dSE_dt1(l),x)  
+        gammadgg = build_smallmatrix(kernels.dSE_dt2(l),x)  
+        
+    if kern == 2:
+        lp,le,p,vc,vr,lc,bc,br = a
+        gammagg  = build_smallmatrix(kernels.QuasiPeriodic(lp,le,p),x) 
+        gammadgdg = build_smallmatrix(kernels.ddQP_dt2dt1(lp,le,p),x)  
+        gammagdg = build_smallmatrix(kernels.dQP_dt1(lp,le,p),x)  
+        gammadgg = build_smallmatrix(kernels.dQP_dt2(lp,le,p),x) 
+
     return vc*bc*gammagg + vr*br* gammadgdg + vc*br*gammagdg + vr*bc*gammadgg
 
 
-def k23(a,x):
+def k23(kern, a, x):
     """
         Equation 23
     """
-    l,vc,vr,lc,bc,br = a
+    if kern == 1:
+        l,vc,vr,lc,bc,br = a
+        gammagg  = build_smallmatrix(kernels.SquaredExponential(l),x) 
+        gammagdg = build_smallmatrix(kernels.dSE_dt1(l),x)  
     
-    gammagg  = build_smallmatrix(kernels.SquaredExponential(l),x) 
-    gammagdg = build_smallmatrix(kernels.dSE_dt1(l),x)  
+    if kern == 2:
+        lp,le,p,vc,vr,lc,bc,br = a
+        gammagg  = build_smallmatrix(kernels.QuasiPeriodic(lp,le,p),x) 
+        gammagdg = build_smallmatrix(kernels.dQP_dt1(lp,le,p),x)  
 
     return bc*lc * gammagg + br*lc*gammagdg
-
-def build_bigmatrix(a,x,y,yerr):
+        
+def build_bigmatrix(kern, a, x, y, yerr):
     """
         build_bigmatrix() creates the big covariance matrix,
     equations 24 in the paper.
         
         Parameters
+    kern = kernel being used; 
+            1 for squared exponential
+            2 for quasi periodic
     a = array with the important parameters
     x = range of values of the independent variable (usually time)
     y = range of values of te dependent variable (the measurments)
@@ -130,12 +146,19 @@ def build_bigmatrix(a,x,y,yerr):
         Returns
     K = covariance matrix
     """ 
-    K11 = k11(a,x)
-    K22 = k22(a,x)
-    K33 = k33(a,x)
-    K12 = k12(a,x)
-    K13 = k13(a,x)
-    K23 = k23(a,x)
+    listofkerns = [1, 2]
+    if not kern in listofkerns:    
+        print('Invalid kernel value!')
+        print('Choose: \n 1 for squared exponential \n 2 for quasi periodic')
+        print
+        raise SystemExit
+        
+    K11 = k11(kern,a,x)
+    K22 = k22(kern,a,x)
+    K33 = k33(kern,a,x)
+    K12 = k12(kern,a,x)
+    K13 = k13(kern,a,x)
+    K23 = k23(kern,a,x)
     
     K1 = np.hstack((K11,K12,K13))
     K2 = np.hstack((K12,K22,K23))
@@ -145,4 +168,3 @@ def build_bigmatrix(a,x,y,yerr):
     K = K + yerr**2*np.identity(len(yerr))
 
     return K
-

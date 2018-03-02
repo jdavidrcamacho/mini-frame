@@ -76,9 +76,10 @@ class SquaredExponential(kernel):
     """
         Squared Exponential kernel and derivatives,
     also know as radial basis function (RBF kernel) in other works.
+        Equation 25 in the paper.
 
         Parameters
-    SE_l = lamba in the paper   
+    SE_l = lambda in the paper   
     """
     def __init__(self, SE_l):
         """
@@ -100,7 +101,7 @@ class SquaredExponential(kernel):
 class dSE_dt1(SquaredExponential):
     """
         Derivative in order to t1, 
-    equation 16 in the paper.
+    equation 16 and A4 in the paper.
     """
     def __init__(self, SE_l):
         """
@@ -129,7 +130,7 @@ class dSE_dt2(SquaredExponential):
         self.SE_l = SE_l
 	
     def __call__(self, r):
-        f1 = r
+        f1 = np.abs(r)
         f2 = self.SE_l**2
         return f1/f2 * np.exp(-0.5* f1*f1/f2)
 		
@@ -151,132 +152,115 @@ class ddSE_dt2dt1(SquaredExponential):
         f2 = self.SE_l**2
         return (1/f2 - f1/f2**2) * np.exp(-0.5* f1/f2)
 
-#	def dSE_dt1(self, r):
-#		"""
-#			Derivative in order to t1, 
-#		equation 16 in the paper.
-#		Important: not to forget that d/dt2 = -d/dt1 
-#		"""
-#        f1 = r**2
-#        f2 = self.SE_l**2 
-#        return f1/(f2**2) * np.exp(-0.5* f1/f2)
-#
-#	def dSE_dt2(self, r):
-#		"""
-#			Derivative in order to t2, 
-#		equation A5 in the paper.
-#		Important: not to forget that d/dt2 = -d/dt1 
-#		"""
-#        f1 = r**2
-#        f2 = self.SE_l**2 
-#        return -f1/(f2**2) * np.exp(-0.5* f1/f2)
-#		
-#	def ddSE_dt2dt1(self, r):
-#		"""
-#			Derivative in order to t2 and t1, 
-#		equation 17 in the paper.
-#		"""
-#        f1 = r**2
-#        f2 = self.SE_l**2
-#        return (1/f2**2 - f1/f2**4) * np.exp(-0.5* f1/f2)
-#
-#	
-#class Const1(kernel):
-#    """
-#        Constant Vc in the paper.
-#    """
-#    def __init__(self, Vc):
-#        """
-#        	Because we are "overwriting" the function __init__
-#        we use this weird super function.
-#        """
-#        super(Const1, self).__init__(Vc)
-#        self.Vc = Vc
-#    	
-#    def __call__(self, r):
-#    	"""
-#    		Not a kernel but we are defining it similarly,
-#    	not sure if it is the smartest move.
-#    	"""                 
-#        return self.Vc
-#     
-#       
-#class Const2(kernel):
-#    """
-#        Constant Vr in the paper.
-#    """
-#    def __init__(self, Vr):
-#        """
-#        	Because we are "overwriting" the function __init__
-#        we use this weird super function.
-#        """
-#        super(Const2, self).__init__(Vr)
-#        self.Vr = Vr
-#    	
-#    def __call__(self, r):
-#    	"""
-#    		Not a kernel but we are defining it similarly,
-#    	not sure if it is the smartest move.
-#    	"""                 
-#        return self.Vr
-#     
-#       
-#class Const3(kernel):
-#    """
-#        Constant Vr in the paper.
-#    """
-#    def __init__(self, Lc):
-#        """
-#        	Because we are "overwriting" the function __init__
-#        we use this weird super function.
-#        """
-#        super(Const3, self).__init__(Lc)
-#        self.Lc = Lc
-#    	
-#    def __call__(self, r):
-#    	"""
-#    		Not a kernel but we are defining it similarly,
-#    	not sure if it is the smartest move.
-#    	"""                 
-#        return self.Lc
-#        
-#       
-#class Const4(kernel):
-#    """
-#        Constant Bc in the paper.
-#    """
-#    def __init__(self, Bc):
-#        """
-#        	Because we are "overwriting" the function __init__
-#        we use this weird super function.
-#        """
-#        super(Const4, self).__init__(Bc)
-#        self.Bc = Bc
-#    	
-#    def __call__(self, r):
-#    	"""
-#    		Not a kernel but we are defining it similarly,
-#    	not sure if it is the smartest move.
-#    	"""                 
-#        return self.Bc
-#        
-#       
-#class Const5(kernel):
-#    """
-#        Constant Vr in the paper.
-#    """
-#    def __init__(self, Br):
-#        """
-#        	Because we are "overwriting" the function __init__
-#        we use this weird super function.
-#        """
-#        super(Const5, self).__init__(Br)
-#        self.Br = Br
-#    	
-#    def __call__(self, r):
-#    	"""
-#    		Not a kernel but we are defining it similarly,
-#    	not sure if it is the smartest move.
-#    	"""                 
-#        return self.Br
-#        
+   
+class QuasiPeriodic(kernel):
+    """
+        Definition of the product between the exponential sine squared kernel 
+    and the squared exponential  kernel, also known as quasi periodic kernel.
+        Equation 27 in the paper.
+
+        Parameters
+    QP_lp = length scale of the periodic component
+    QP_le = evolutionary time scale
+    QP_P = period
+    """
+    def __init__(self, QP_lp, QP_le, QP_P):
+        """
+        Because we are "overwriting" the function __init__
+        we use this weird super function
+        """
+        super(QuasiPeriodic, self).__init__(QP_lp, QP_le, QP_P)
+        self.QP_lp = QP_lp
+        self.QP_le = QP_le
+        self.QP_P = QP_P    
+
+    def __call__(self, r):
+        f1 = np.abs(r)
+        f2 = self.QP_lp**2
+        f3 = self.QP_le**2
+        f4 = self.QP_P
+        
+        f5 = np.sin(np.pi*f1/f4)
+        return np.exp( -(2.0*f5*f5/f2) - 0.5*f1/f3 )
+
+class dQP_dt1(QuasiPeriodic):
+    """
+        Derivative in order to t1, 
+    equation 16 and A4 in the paper.
+    """
+    def __init__(self, QP_lp, QP_le, QP_P):
+        """
+        Because we are "overwriting" the function __init__
+        we use this weird super function
+        """
+        super(dQP_dt1, self).__init__(QP_lp, QP_le, QP_P)
+        self.QP_lp = QP_lp
+        self.QP_le = QP_le
+        self.QP_P = QP_P   
+	
+    def __call__(self, r):
+        f1 = np.abs(r)
+        f2 = self.QP_lp**2
+        f3 = self.QP_le**2
+        f4 = self.QP_P
+        
+        f5 = np.sin(np.pi*f1/f4)
+        f6 = np.cos(np.pi*f1/f4)
+        f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1/f3 )
+        return (-(4*np.pi*f5*f6)/(f2*f4) - f1/f3) *f7 
+
+class dQP_dt2(QuasiPeriodic):
+    """
+        Derivative in order to t2, 
+    equation A5 in the paper.
+    """
+    def __init__(self, QP_lp, QP_le, QP_P):
+        """
+        Because we are "overwriting" the function __init__
+        we use this weird super function
+        """
+        super(dQP_dt2, self).__init__(QP_lp, QP_le, QP_P)
+        self.QP_lp = QP_lp
+        self.QP_le = QP_le
+        self.QP_P = QP_P   
+	
+    def __call__(self, r):
+        f1 = np.abs(r)
+        f2 = self.QP_lp**2
+        f3 = self.QP_le**2
+        f4 = self.QP_P
+        
+        f5 = np.sin(np.pi*f1/f4)
+        f6 = np.cos(np.pi*f1/f4)
+        f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1/f3 )
+        return ((4*np.pi*f5*f6)/(f2*f4) + f1/f3) *f7 
+
+class ddQP_dt2dt1(QuasiPeriodic):
+    """
+        Derivative in order to t2 and t1, 
+    equation A10 in the paper.
+    """
+    def __init__(self, QP_lp, QP_le, QP_P):
+        """
+        Because we are "overwriting" the function __init__
+        we use this weird super function
+        """
+        super(ddQP_dt2dt1, self).__init__(QP_lp, QP_le, QP_P)
+        self.QP_lp = QP_lp
+        self.QP_le = QP_le
+        self.QP_P = QP_P   
+	
+    def __call__(self, r):
+        f1 = np.abs(r)
+        f2 = self.QP_lp**2
+        f3 = self.QP_le**2
+        f4 = self.QP_P
+        
+        f5 = np.sin(np.pi*f1/f4)
+        f6 = np.cos(np.pi*f1/f4)
+        f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1/f3 )
+        f8 = (-(4*np.pi*f5*f6)/(f2*f4) - f1/f3)
+        f9 = ((4*np.pi*f5*f6)/(f2*f4) + f1/f3) 
+        return f8*f9*f7 + (1.0/f3 + 4*np.pi*np.pi*f6*f6/(f2*f4*f4) /
+                           -4*np.pi*np.pi*f5*f5/(f2*f4*f4)) *f7 
+
