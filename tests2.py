@@ -16,7 +16,12 @@ from scipy.optimize import minimize
 kernel = 1 #1 = squared exponential, 2 = quasi periodic, else = invalid kernel
 
 #a = np.array([l,vc,vr,lc,bc,br]) <- THIS IS FOR THE SQUARED EXPONENTIAL
-a = np.array([0.1, 100, 1, 10, 10, 1])
+a = np.array([ np.random.uniform(np.exp(-10), np.exp(100)),
+                  np.random.uniform(np.exp(-10), np.exp(100)), 
+                  np.random.uniform(np.exp(-10), np.exp(100)), 
+                  np.random.uniform(np.exp(-10), np.exp(100)), 
+                  np.random.uniform(np.exp(-10), np.exp(100)), 
+                  np.random.uniform(np.exp(-10), np.exp(100)) ])
 
 ### Example for the squared exponential  ###
 #data
@@ -46,50 +51,37 @@ print('log marginal likelihood = ', likelihood(kernel,a,t,y,yerr))
 #pl.show()
 
 #### simple sample and marginalization with emcee
-runs, burns = 10000, 10000
+runs, burns = 1000, 1000
 if kernel == 1:
     def logprob(params):
-        l, vc, vr, lc, bc, br = params
-    
-        if l < 0 or l > 10:
+        if np.any((-10 > params[1:]) + (params[1:] > 100)):
             return -np.inf
-        if vc < 0 or vc > 100:
-            return -np.inf
-        if vr < 0 or vr > 10:
-            return -np.inf
-        if lc < 0 or lc > 100:
-            return -np.inf
-        if bc < 0 or bc > 100:
-            return -np.inf
-        if br < 0 or br > 100:
-            return -np.inf
-    
-        lp = 0.0
         
-        #Compute and return the posterior
-        return lp + likelihood(kernel,params,t,y,yerr)
-
+        logprior = 0.0
+        return logprior + likelihood(kernel,params,t,y,yerr)
+    
     
     #Set up the sampler.
     nwalkers, ndim = 2*len(a), len(a)
     sampler = emcee.EnsembleSampler(nwalkers, ndim, logprob)
     
     #Initialize the walkers.
+#    p0 = a + 1e-4 * np.random.randn(nwalkers, ndim)
     #p0[i,j] is the starting point for walk i along variable j.
     p0 = np.empty((nwalkers, ndim))
-    p0[:,0] = np.random.uniform(0, 1, nwalkers)       # l
-    p0[:,1] = np.random.uniform(0, 1, nwalkers)       # vc
-    p0[:,2] = np.random.uniform(0, 1, nwalkers)       # l
-    p0[:,3] = np.random.uniform(0, 1, nwalkers)       # vc
-    p0[:,4] = np.random.uniform(0, 1, nwalkers)       # l
-    p0[:,5] = np.random.uniform(0, 1, nwalkers)       # vc    
+    p0[:,0] = np.random.uniform(np.exp(-10), np.exp(100), nwalkers)        # l
+    p0[:,1] = np.random.uniform(np.exp(-10), np.exp(100), nwalkers)        # vc
+    p0[:,2] = np.random.uniform(np.exp(-10), np.exp(100), nwalkers)        # vr
+    p0[:,3] = np.random.uniform(np.exp(-10), np.exp(100), nwalkers)        # lc
+    p0[:,4] = np.random.uniform(np.exp(-10), np.exp(100), nwalkers)        # bc
+    p0[:,5] = np.random.uniform(np.exp(-10), np.exp(100), nwalkers)        # vr    
     #Make sure we didn't by change pick an value that was too big
-    p0[:,0] = np.minimum(p0[:,0], 10)    
-    p0[:,1] = np.minimum(p0[:,0], 100)    
-    p0[:,2] = np.minimum(p0[:,0], 10)    
-    p0[:,3] = np.minimum(p0[:,0], 100)    
-    p0[:,4] = np.minimum(p0[:,0], 100)    
-    p0[:,5] = np.minimum(p0[:,0], 100)    
+    p0[:,0] = np.minimum(p0[:,0], np.exp(100))    
+    p0[:,1] = np.minimum(p0[:,1], np.exp(100))    
+    p0[:,2] = np.minimum(p0[:,2], np.exp(100))  
+    p0[:,3] = np.minimum(p0[:,3], np.exp(100))   
+    p0[:,4] = np.minimum(p0[:,4], np.exp(100))   
+    p0[:,5] = np.minimum(p0[:,5], np.exp(100))    
     
     print("Running burn-in")
     p0, _, _ = sampler.run_mcmc(p0, burns)

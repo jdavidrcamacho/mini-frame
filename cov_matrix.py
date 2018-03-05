@@ -135,7 +135,7 @@ def build_bigmatrix(kern, a, x, y, yerr):
     equations 24 in the paper.
         
         Parameters
-    kern = kernel being used; 
+    kern = kernel being used: 
             1 for squared exponential
             2 for quasi periodic
     a = array with the important parameters
