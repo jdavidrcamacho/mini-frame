@@ -23,6 +23,8 @@ def likelihood(kern, a, x, y, yerr):
     listofkerns = [1, 2]
     if not kern in listofkerns:    
         print('Invalid kernel')
+        print('Choose: \n 1 for squared exponential \n 2 for quasi periodic')
+        print
         raise SystemExit
         
     K=cov_matrix.build_bigmatrix(kern, a, x, y, yerr)
@@ -31,15 +33,20 @@ def likelihood(kern, a, x, y, yerr):
         sol = cho_solve(L1, y)
         n = y.size
         log_like = -0.5*np.dot(y, sol) \
-                  - np.sum(np.log(np.diag(L1[0]))) \
-                  - n*0.5*np.log(2*np.pi)        
+                  -np.sum(np.log(np.diag(L1[0]))) \
+                  -n*0.5*np.log(2*np.pi)        
     except LinAlgError:
-        return -np.inf
-    
+        #return -np.inf
+        K2=np.linalg.inv(K)
+        n = y.size
+        log_like2 = -0.5* np.dot(np.dot(y.T,K2),y) \
+                  -np.sum(np.log(np.diag(K))) \
+                  -n*0.5*np.log(2*np.pi) 
+        return log_like2
     return log_like
 
-    
-def inv_ll(a, x, y, yerr, kern):    
+
+def inv_ll(a, x, y, yerr, kern):
     """
         inv_ll() calculates the minus marginal log likelihood,
     to be used with scipy.optimize.minimize
