@@ -1,12 +1,23 @@
 import numpy as np
-from scipy.linalg import cho_factor, cho_solve, LinAlgError
+from scipy.linalg import cho_factor, cho_solve, LinAlgError, eigh
 from scipy.stats import multivariate_normal
+import matplotlib.pyplot as plt 
 
 from kernels import SquaredExponential
 import cov_matrix
 
+def scale(x, xerr):
+    """ 
+    to x: subtract mean, divide by std 
+    to xerr: divide by std of x
+    """
+    m, s = x.mean(), x.std()
+    return (x-m)/s, xerr/s
+
+
+
 class BIGgp(object):
-    def __init__(self, kernel, t, rv, rverr, variables):
+    def __init__(self, kernel, t, rv, rverr, bis, sig_bis, rhk, sig_rhk):
         
         self.kernel = kernel
         self.dKdt1, self.dKdt2, self.ddKdt2dt1 = self.kernel.__subclasses__()
@@ -14,14 +25,14 @@ class BIGgp(object):
         self.t = t
         self.rv = rv
         self.rverr = rverr
-        # extra dependent variables, besides the RVs
-        var = np.atleast_2d(variables)
-        # how many more dependent variables
-        self.L = var.shape[0]
-        assert self.L == 2, 'for now I only work with RVs, Rhk and BIS... sorry'
-        self.var = var
+        self.bis = bis
+        self.sig_bis = sig_bis
+        self.rhk = rhk
+        self.sig_rhk = sig_rhk
+        self.L = 2
+        # assert self.L == 2, 'for now I only work with RVs, Rhk and BIS... sorry'
 
-        self.yerr = np.tile(rverr, self.L+1)
+        self.yerr = np.array([rverr, sig_bis, sig_rhk])
         self.tt = np.tile(t, self.L+1)
         self.tplot = []
         for i in range(self.L + 1):
@@ -31,10 +42,37 @@ class BIGgp(object):
 
     @classmethod
     def from_rdb(cls, filename, kernel=SquaredExponential, **kwargs):
+        """ 
+        Create class from a .rdb file
+        Arguments:
+            filename
+            kernel (optional)
+            usecols = tuple with columns of the file to read into t, rv, rverr, bis, rhk, sig_rhk
+                      (uncertainty in bis is 2*rverr)
+            skiprows = number of rows to skip (default 2)
+        """
         skip = kwargs.get('skiprows', 2)
         kwargs.get('unpack')
-        t, rv, rverr, *rest = np.loadtxt(filename, skiprows=skip, unpack=True, **kwargs)
-        return cls(kernel, t, rv, rverr, rest)
+        t, rv, rverr, bis, rhk, sig_rhk = np.loadtxt(filename, skiprows=skip, unpack=True, **kwargs)
+
+        biserr = 2*rverr # need to do this before changing rverr
+
+        print ('removing mean from RVs: %f' % rv.mean())
+        print ('dividing RVs by std: %f' % rv.std())
+        rv, rverr = scale(rv, rverr)
+
+
+        print ('removing mean from BIS: %f' % bis.mean())
+        print ('dividing BIS by std: %f' % bis.std())
+        bis, sig_bis = scale(bis, biserr)
+
+        print ('removing mean from logRhk: %f' % rhk.mean())
+        print ('dividing logRhk by std: %f' % rhk.std())
+        rhk, sig_rhk = scale(rhk, sig_rhk)
+
+        return cls(kernel, t, rv, rverr, bis, sig_bis, rhk, sig_rhk)
+
+
 
     def _kernel_matrix(self, kernel, x):
         """ returns the covariance matrix created by evaluating `kernel` at inputs x """
@@ -63,7 +101,7 @@ class BIGgp(object):
         gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)  
         gammadgg = self._kernel_matrix(self.dKdt2(*kpars), x)  
         
-        return vc**2 * gammagg + vr**2* gammadgdg + vc*vr*(gammagdg + gammadgg)
+        return vc**2 * gammagg + vr**2 * gammadgdg #+ vc*vr*(gammagdg + gammadgg)
 
 
     def k22(self, a, x):
@@ -85,7 +123,7 @@ class BIGgp(object):
         gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)  
         gammadgg = self._kernel_matrix(self.dKdt2(*kpars), x)  
 
-        return bc**2 * gammagg + br**2* gammadgdg + bc*br*(gammagdg + gammadgg)
+        return bc**2 * gammagg + br**2 * gammadgdg #+ bc*br*(gammagdg + gammadgg)
 
     def k12(self, a, x):
         """ Equation 21 """
@@ -95,7 +133,7 @@ class BIGgp(object):
         gammagg  = self._kernel_matrix(self.kernel(*kpars), x) 
         gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)  
 
-        return vc*lc * gammagg + vr*lc*gammagdg
+        return vc*lc * gammagg + vr*lc * gammagdg
 
     def k13(self, a, x):
         """ Equation 22 """
@@ -121,24 +159,33 @@ class BIGgp(object):
         return bc*lc * gammagg + br*lc*gammagdg
 
 
-    def compute_matrix(self, a):
+    def compute_matrix(self, a, yerr=False):
         """ Creates the big covariance matrix, equations 24 in the paper """ 
+        print ('Vc:%.2f  Vr:%.2f  Lc:%.2f  Bc:%.2f  Br:%.2f' % tuple(self._scaling_pars(a)))
+
+        if yerr:
+            diag1 = self.rverr**2 * np.identity(self.t.size)
+            diag2 = self.sig_bis**2 * np.identity(self.t.size)
+            diag3 = self.sig_rhk**2 * np.identity(self.t.size)
+        else:
+            diag1 = 1e-12 * np.identity(self.t.size)
+            diag2 = diag3 = diag1
         
-        K11 = self.k11(a, self.t)
-        K22 = self.k22(a, self.t)
-        K33 = self.k33(a, self.t)
-        K12 = self.k12(a, self.t)
-        K13 = self.k13(a, self.t)
-        K23 = self.k23(a, self.t)
+        K11 = self.k11(a, self.t) + diag1
+        K22 = self.k22(a, self.t) + diag2
+        K33 = self.k33(a, self.t) + diag3
+        K12 = self.k12(a, self.t) + diag1
+        K13 = self.k13(a, self.t) + diag1
+        K23 = self.k23(a, self.t) + diag1
         
         K1 = np.hstack((K11, K12, K13))
-        K2 = np.hstack((K12, K22, K23))
-        K3 = np.hstack((K13, K23, K33))
+        K2 = np.hstack((K12.T, K22, K23))
+        K3 = np.hstack((K13.T, K23.T, K33))
         
         K = np.vstack((K1, K2, K3))
         # if yerr is not None:
         #     K = K + yerr**2 * np.identity(yerr.size)
-        K = K + self.yerr**2 * np.identity(self.yerr.size)
+
 
         return K
 
@@ -183,6 +230,13 @@ class BIGgp(object):
         return norm.rvs()
 
 
+    def sample_from_G(self, t, a):
+        kpars = self._kernel_pars(a)
+        cov = self._kernel_matrix(self.kernel(*kpars), t)
+
+        norm = multivariate_normal(np.zeros_like(t), cov)
+        return norm.rvs()
+
 
 #a = np.array([l, vc,vr,lc,bc,br]) <- THIS IS FOR THE SQUARED EXPONENTIAL
 #a = np.array([0.1, 10, 0, 0, 0, 0])
@@ -191,3 +245,30 @@ class BIGgp(object):
 # a = np.array([0.2, 10000, 100, 20, 0, 0, 0, 0])
 
 
+# def isposdef(x):
+#     eigv = np.linalg.eigvals(x)
+#     # print(eigv)
+#     return np.all(eigv >= 0)
+
+def isposdef(A, tol=1e-12):
+  E = eigh(A, eigvals_only=True)
+  return np.all(E > -tol)
+
+
+def show_and_check(gp, a):
+    K = gp.compute_matrix(a, yerr=True)
+    print ('K is positive semi-definite:', isposdef(K))
+    names = ('k11', 'k21', 'k31'), ('k12', 'k22', 'k32'), ('k13', 'k23', 'k33')
+    (k11, k21, k31), (k12, k22, k32), (k13, k23, k33) = \
+                    [np.vsplit(c, gp.L+1) for c in np.hsplit(K, gp.L+1)]
+    mats = (k11, k21, k31), (k12, k22, k32), (k13, k23, k33)
+
+
+    for i in range(gp.L+1):
+        for j in range(gp.L+1):
+            print ('%s is positive semi-definite: %s' 
+                            % (names[i][j], isposdef(mats[i][j])) )
+
+    plt.imshow(K)
+    plt.show()
+    return K, (k11, k21, k31), (k12, k22, k32), (k13, k23, k33)
