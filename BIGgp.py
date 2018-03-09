@@ -55,6 +55,12 @@ class BIGgp(object):
         kwargs.get('unpack')
         t, rv, rverr, bis, rhk, sig_rhk = np.loadtxt(filename, skiprows=skip, unpack=True, **kwargs)
 
+        # print ('removing t[0] from times: %f' % t[0])
+        # print ('dividing times by time span: %f' % t.ptp())
+        # t -= t[0]
+        # t /= t.ptp()
+        t = np.linspace(0, 1, t.size)
+
         biserr = 2*rverr # need to do this before changing rverr
 
         print ('removing mean from RVs: %f' % rv.mean())
@@ -165,8 +171,8 @@ class BIGgp(object):
 
         if yerr:
             diag1 = self.rverr**2 * np.identity(self.t.size)
-            diag2 = self.sig_bis**2 * np.identity(self.t.size)
-            diag3 = self.sig_rhk**2 * np.identity(self.t.size)
+            diag2 = self.sig_rhk**2 * np.identity(self.t.size)
+            diag3 = self.sig_bis**2 * np.identity(self.t.size)
         else:
             diag1 = 1e-12 * np.identity(self.t.size)
             diag2 = diag3 = diag1
@@ -174,9 +180,9 @@ class BIGgp(object):
         K11 = self.k11(a, self.t) + diag1
         K22 = self.k22(a, self.t) + diag2
         K33 = self.k33(a, self.t) + diag3
-        K12 = self.k12(a, self.t) + diag1
-        K13 = self.k13(a, self.t) + diag1
-        K23 = self.k23(a, self.t) + diag1
+        K12 = self.k12(a, self.t)
+        K13 = self.k13(a, self.t)
+        K23 = self.k23(a, self.t)
         
         K1 = np.hstack((K11, K12, K13))
         K2 = np.hstack((K12.T, K22, K23))
