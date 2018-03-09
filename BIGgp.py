@@ -4,7 +4,6 @@ from scipy.stats import multivariate_normal
 import matplotlib.pyplot as plt 
 
 from kernels import SquaredExponential
-import cov_matrix
 
 def scale(x, xerr):
     """ 
@@ -75,7 +74,6 @@ class BIGgp(object):
         print ('removing mean from logRhk: %f' % rhk.mean())
         print ('dividing logRhk by std: %f' % rhk.std())
         rhk, sig_rhk = scale(rhk, sig_rhk)
-
         return cls(kernel, t, rv, rverr, bis, sig_bis, rhk, sig_rhk)
 
 
@@ -86,28 +84,30 @@ class BIGgp(object):
         K = kernel(r)
         return K
 
+
     def _kernel_pars(self, a):
         if self.kernel.__name__ == 'SquaredExponential':
             l, vc, vr, lc, bc, br = a
             return [l]
         elif self.kernel.__name__ == 'QuasiPeriodic':
             lp, le, p, vc, vr, lc, bc, br = a
-            return [lp, le, p]        
+            return [lp, le, p]
+
 
     def _scaling_pars(self, a):
         return a[-5:]
+
 
     def k11(self, a, x):
         """ Equation 18 """
         kpars = self._kernel_pars(a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
 
-        gammagg  = self._kernel_matrix(self.kernel(*kpars), x) 
-        gammadgdg = self._kernel_matrix(self.ddKdt2dt1(*kpars), x)  
-        gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)  
-        gammadgg = self._kernel_matrix(self.dKdt2(*kpars), x)  
-        
-        return vc**2 * gammagg + vr**2 * gammadgdg #+ vc*vr*(gammagdg + gammadgg)
+        gammagg  = self._kernel_matrix(self.kernel(*kpars), x)
+        gammadgdg = self._kernel_matrix(self.ddKdt2dt1(*kpars), x)
+        gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)
+        gammadgg = self._kernel_matrix(self.dKdt2(*kpars), x)
+        return vc**2 * gammagg + vr**2 * gammadgdg + vc*vr*(gammagdg + gammadgg)
 
 
     def k22(self, a, x):
@@ -118,27 +118,27 @@ class BIGgp(object):
         gammagg  = self._kernel_matrix(self.kernel(*kpars), x)
         return lc**2 * gammagg
 
+
     def k33(self, a, x):
         """ Equation 20 """
         kpars = self._kernel_pars(a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
 
 
-        gammagg  = self._kernel_matrix(self.kernel(*kpars), x) 
-        gammadgdg = self._kernel_matrix(self.ddKdt2dt1(*kpars), x)  
-        gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)  
-        gammadgg = self._kernel_matrix(self.dKdt2(*kpars), x)  
+        gammagg  = self._kernel_matrix(self.kernel(*kpars), x)
+        gammadgdg = self._kernel_matrix(self.ddKdt2dt1(*kpars), x)
+        gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)
+        gammadgg = self._kernel_matrix(self.dKdt2(*kpars), x)
+        return bc**2 * gammagg + br**2 * gammadgdg + bc*br*(gammagdg + gammadgg)
 
-        return bc**2 * gammagg + br**2 * gammadgdg #+ bc*br*(gammagdg + gammadgg)
 
     def k12(self, a, x):
         """ Equation 21 """
         kpars = self._kernel_pars(a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
 
-        gammagg  = self._kernel_matrix(self.kernel(*kpars), x) 
-        gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)  
-
+        gammagg  = self._kernel_matrix(self.kernel(*kpars), x)
+        gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)
         return vc*lc * gammagg + vr*lc * gammagdg
 
     def k13(self, a, x):
@@ -146,11 +146,10 @@ class BIGgp(object):
         kpars = self._kernel_pars(a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
 
-        gammagg  = self._kernel_matrix(self.kernel(*kpars), x) 
-        gammadgdg = self._kernel_matrix(self.ddKdt2dt1(*kpars), x)  
-        gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)  
-        gammadgg = self._kernel_matrix(self.dKdt2(*kpars), x)  
-
+        gammagg  = self._kernel_matrix(self.kernel(*kpars), x)
+        gammadgdg = self._kernel_matrix(self.ddKdt2dt1(*kpars), x)
+        gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)
+        gammadgg = self._kernel_matrix(self.dKdt2(*kpars), x)
         return vc*bc*gammagg + vr*br* gammadgdg + vc*br*gammagdg + vr*bc*gammadgg
 
 
@@ -159,9 +158,8 @@ class BIGgp(object):
         kpars = self._kernel_pars(a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
 
-        gammagg  = self._kernel_matrix(self.kernel(*kpars), x) 
-        gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)  
-
+        gammagg  = self._kernel_matrix(self.kernel(*kpars), x)
+        gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)
         return bc*lc * gammagg + br*lc*gammagdg
 
 
@@ -189,11 +187,8 @@ class BIGgp(object):
         K3 = np.hstack((K13.T, K23.T, K33))
         
         K = np.vstack((K1, K2, K3))
-        # if yerr is not None:
-        #     K = K + yerr**2 * np.identity(yerr.size)
-
-
         return K
+
 
     def log_likelihood(self, a, y):
         """ Calculates the marginal log likelihood
@@ -205,7 +200,6 @@ class BIGgp(object):
         Returns:
             marginal log likelihood
         """
-            
         K = self.compute_matrix(a)
 
         try:
@@ -216,13 +210,12 @@ class BIGgp(object):
                        - np.sum(np.log(np.diag(L1[0]))) \
                        - n*0.5*np.log(2*np.pi)        
         except LinAlgError:
-            #return -np.inf
-            K2=np.linalg.inv(K)
-            n = y.size
-            log_like = -0.5* np.dot(np.dot(y.T,K2),y) \
-                       -np.sum(np.log(np.diag(K))) \
-                       -n*0.5*np.log(2*np.pi) 
-
+            return -np.inf
+#            K2=np.linalg.inv(K)
+#            n = y.size
+#            log_like = -0.5* np.dot(np.dot(y.T,K2),y) \
+#                       -np.sum(np.log(np.diag(K))) \
+#                       -n*0.5*np.log(2*np.pi) 
         return log_like
 
     def minus_log_likelihood(self, a, y):
@@ -244,21 +237,9 @@ class BIGgp(object):
         return norm.rvs()
 
 
-#a = np.array([l, vc,vr,lc,bc,br]) <- THIS IS FOR THE SQUARED EXPONENTIAL
-#a = np.array([0.1, 10, 0, 0, 0, 0])
-
-#a = np.array([lp, le, p, vc,vr,lc,bc,br]) <- THIS IS FOR THE QUASI PERIODIC
-# a = np.array([0.2, 10000, 100, 20, 0, 0, 0, 0])
-
-
-# def isposdef(x):
-#     eigv = np.linalg.eigvals(x)
-#     # print(eigv)
-#     return np.all(eigv >= 0)
-
 def isposdef(A, tol=1e-12):
-  E = eigh(A, eigvals_only=True)
-  return np.all(E > -tol)
+    E = eigh(A, eigvals_only=True)
+    return np.all(E > -tol)
 
 
 def show_and_check(gp, a):

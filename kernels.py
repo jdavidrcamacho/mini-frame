@@ -35,7 +35,7 @@ class kernel(object):
         return "{0}({1})".format(self.__class__.__name__,
                                  ", ".join(map(str, self.pars)))
 
-                            
+
 class _operator(kernel):
     """ To allow operations between two kernels """
     def __init__(self, k1, k2):
@@ -60,7 +60,7 @@ class Product(_operator):
     """ Product of two kernels """
     def __repr__(self):
         return "{0} * {1}".format(self.k1, self.k2)
-        
+
     def __call__(self, r):
         return self.k1(r) * self.k2(r)
 
@@ -70,7 +70,7 @@ class Constant(kernel):
     def __init__(self, c):
         super(Constant, self).__init__(c)
         self.c = c
-        
+
     def __call__(self, r):
         return self.c * np.ones_like(r)
 
@@ -90,8 +90,8 @@ class SquaredExponential(kernel):
     
     def __call__(self, r):
         f1 = r**2
-        f2 = self.ell**2                   
-        return np.exp(-0.5 * f1/f2)  
+        f2 = self.ell**2
+        return np.exp(-0.5 * f1/f2)
 
 
 class dSE_dt1(SquaredExponential):
@@ -108,6 +108,7 @@ class dSE_dt1(SquaredExponential):
         f2 = self.ell**2 
         return -f1/f2 * np.exp(-0.5* f1*f1/f2)
 
+
 class dSE_dt2(SquaredExponential):
     """
     Derivative of the SquaredExponential kernel with respect to t1.
@@ -123,6 +124,7 @@ class dSE_dt2(SquaredExponential):
         return f1/f2 * np.exp(-0.5* f1*f1/f2)
         
 
+
 class ddSE_dt2dt1(SquaredExponential):
     """
     Second derivative of the SquaredExponential kernel with respect to t1 and t2.
@@ -131,14 +133,14 @@ class ddSE_dt2dt1(SquaredExponential):
     def __init__(self, ell):
         super(ddSE_dt2dt1, self).__init__(ell)
         self.ell = ell
-    
+
     def __call__(self, r):
         f1 = r**2
         f2 = self.ell**2
         return (1/f2 - f1/f2**2) * np.exp(-0.5* f1/f2)
 
 
-# Quasi-periodic kernel   
+# Quasi-periodic kernel
 class QuasiPeriodic(kernel):
     """ 
     This kernel is the product between the exponential sine squared kernel 
@@ -154,7 +156,7 @@ class QuasiPeriodic(kernel):
         super(QuasiPeriodic, self).__init__(ell_p, ell_e, period)
         self.ell_p = ell_p
         self.ell_e = ell_e
-        self.period = period    
+        self.period = period
 
     def __call__(self, r):
         f1 = np.abs(r)
@@ -165,6 +167,7 @@ class QuasiPeriodic(kernel):
         f5 = np.sin(np.pi*f1/f4)
         return np.exp( -(2.0*f5*f5/f2) - 0.5*f1/f3 )
 
+
 class dQP_dt1(QuasiPeriodic):
     """ 
     Derivative of the QuasiPeriodic kernel with respect to t1.
@@ -174,18 +177,19 @@ class dQP_dt1(QuasiPeriodic):
         super(dQP_dt1, self).__init__(ell_p, ell_e, period)
         self.ell_p = ell_p
         self.ell_e = ell_e
-        self.period = period   
-    
+        self.period = period
+
     def __call__(self, r):
         f1 = np.abs(r)
         f2 = self.ell_p**2
         f3 = self.ell_e**2
         f4 = self.period
-        
+
         f5 = np.sin(np.pi*f1/f4)
         f6 = np.cos(np.pi*f1/f4)
         f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1/f3 )
         return (-(4*np.pi*f5*f6)/(f2*f4) - f1/f3) *f7 
+
 
 class dQP_dt2(QuasiPeriodic):
     """ 
@@ -196,18 +200,19 @@ class dQP_dt2(QuasiPeriodic):
         super(dQP_dt2, self).__init__(ell_p, ell_e, period)
         self.ell_p = ell_p
         self.ell_e = ell_e
-        self.period = period   
-    
+        self.period = period
+
     def __call__(self, r):
         f1 = np.abs(r)
         f2 = self.ell_p**2
         f3 = self.ell_e**2
         f4 = self.period
-        
+
         f5 = np.sin(np.pi*f1/f4)
         f6 = np.cos(np.pi*f1/f4)
         f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1/f3 )
         return ((4*np.pi*f5*f6)/(f2*f4) + f1/f3) *f7 
+
 
 class ddQP_dt2dt1(QuasiPeriodic):
     """
@@ -218,8 +223,8 @@ class ddQP_dt2dt1(QuasiPeriodic):
         super(ddQP_dt2dt1, self).__init__(ell_p, ell_e, period)
         self.ell_p = ell_p
         self.ell_e = ell_e
-        self.period = period   
-    
+        self.period = period
+
     def __call__(self, r):
         f1 = np.abs(r)
         f2 = self.ell_p**2
