@@ -96,7 +96,7 @@ class BIGgp(object):
 
     def _scaling_pars(self, a):
         return a[-5:]
-
+    
 
     def k11(self, a, x):
         """ Equation 18 """
@@ -163,7 +163,7 @@ class BIGgp(object):
         return bc*lc * gammagg + br*lc*gammagdg
 
 
-    def compute_matrix(self, a, yerr=False):
+    def compute_matrix(self, a, yerr=True):
         """ Creates the big covariance matrix, equations 24 in the paper """ 
         print ('Vc:%.2f  Vr:%.2f  Lc:%.2f  Bc:%.2f  Br:%.2f' % tuple(self._scaling_pars(a)))
 
@@ -175,12 +175,12 @@ class BIGgp(object):
             diag1 = 1e-12 * np.identity(self.t.size)
             diag2 = diag3 = diag1
         
-        K11 = self.k11(a, self.t) + diag1
-        K22 = self.k22(a, self.t) + diag2
-        K33 = self.k33(a, self.t) + diag3
-        K12 = self.k12(a, self.t)
-        K13 = self.k13(a, self.t)
-        K23 = self.k23(a, self.t)
+        K11 = self.k11(a, self.t) #+ diag1
+        K22 = self.k22(a, self.t) #+ diag2
+        K33 = self.k33(a, self.t) #+ diag3
+        K12 = self.k12(a, self.t) #+ diag1
+        K13 = self.k13(a, self.t) #+ diag1
+        K23 = self.k23(a, self.t) #+ diag2
         
         K1 = np.hstack((K11, K12, K13))
         K2 = np.hstack((K12.T, K22, K23))
