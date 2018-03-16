@@ -174,19 +174,38 @@ class BIGgp(object):
         else:
             diag1 = 1e-12 * np.identity(self.t.size)
             diag2 = diag3 = diag1
-        
-        K11 = self.k11(a, self.t) #+ diag1
-        K22 = self.k22(a, self.t) #+ diag2
-        K33 = self.k33(a, self.t) #+ diag3
+
+#From R:
+# obs_error <- diag(sd^2)...............................................................................(1)
+# cov_plus_nugget <- k_full + obs_error.................................................................(2)
+
+# nuggest_value <- 0.01.................................................................................(3)
+# nugget_mat <- diag(nugget_vec)........................................................................(4)
+# cov_plus_nugget <-  cov_plus_nugget + nugget_mat......................................................(5)
+# cov_plus_nugget <- (1-nuggest_value)*cov_plus_nugget + nuggest_value*diag(diag(cov_plus_nugget))......(6)
+
+        K11 = self.k11(a, self.t) + diag1
+        K22 = self.k22(a, self.t) + diag2
+        K33 = self.k33(a, self.t) + diag3
         K12 = self.k12(a, self.t) #+ diag1
         K13 = self.k13(a, self.t) #+ diag1
         K23 = self.k23(a, self.t) #+ diag2
-        
         K1 = np.hstack((K11, K12, K13))
-        K2 = np.hstack((K12.T, K22, K23))
-        K3 = np.hstack((K13.T, K23.T, K33))
-        
-        K = np.vstack((K1, K2, K3))
+        K2 = np.hstack((K12, K22, K23))
+        K3 = np.hstack((K13, K23, K33))
+        K = np.vstack((K1, K2, K3))     # equal to (2)
+
+        nuggest_value = 0.01    # equal to (3)
+        plus_nugget = np.hstack((self.rverr**2, self.sig_rhk**2, self.sig_bis**2))
+        plus_nugget = plus_nugget * np.identity(3 * self.t.size)    # equal to (4)
+        K = K + plus_nugget     # equal to (5)
+        K = (1 - nuggest_value)*K + nuggest_value*np.diag(np.diag(K))   # equal to (6)
+
+#        import matplotlib.pyplot as pl
+#        pl.imshow(K)
+#        pl.show()
+#        print(K)
+
         return K
 
 
@@ -203,7 +222,7 @@ class BIGgp(object):
         K = self.compute_matrix(a)
 
         try:
-            L1 = cho_factor(K)
+            L1 = cho_factor(K,check_finite=False)
             sol = cho_solve(L1, y)
             n = y.size
             log_like = - 0.5*np.dot(y, sol) \
