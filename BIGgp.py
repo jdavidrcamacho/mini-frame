@@ -195,11 +195,11 @@ class BIGgp(object):
         K3 = np.hstack((K13, K23, K33))
         K = np.vstack((K1, K2, K3))     # equal to (2)
 
-        nuggest_value = 0.01    # equal to (3)
-        plus_nugget = np.hstack((self.rverr**2, self.sig_rhk**2, self.sig_bis**2))
-        plus_nugget = plus_nugget * np.identity(3 * self.t.size)    # equal to (4)
-        K = K + plus_nugget     # equal to (5)
-        K = (1 - nuggest_value)*K + nuggest_value*np.diag(np.diag(K))   # equal to (6)
+#        nuggest_value = 0.01    # equal to (3)
+#        plus_nugget = np.hstack((self.rverr**2, self.sig_rhk**2, self.sig_bis**2))
+#        plus_nugget = plus_nugget * np.identity(3 * self.t.size)    # equal to (4)
+#        K = K + plus_nugget     # equal to (5)
+#        K = (1 - nuggest_value)*K + nuggest_value*np.diag(np.diag(K))   # equal to (6)
 
 #        import matplotlib.pyplot as pl
 #        pl.imshow(K)
