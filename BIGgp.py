@@ -195,11 +195,11 @@ class BIGgp(object):
         K3 = np.hstack((K13, K23, K33))
         K = np.vstack((K1, K2, K3))     # equal to (2)
 
-#        nuggest_value = 0.01    # equal to (3)
-#        plus_nugget = np.hstack((self.rverr**2, self.sig_rhk**2, self.sig_bis**2))
-#        plus_nugget = plus_nugget * np.identity(3 * self.t.size)    # equal to (4)
-#        K = K + plus_nugget     # equal to (5)
-#        K = (1 - nuggest_value)*K + nuggest_value*np.diag(np.diag(K))   # equal to (6)
+        nuggest_value = 0.01    # equal to (3)
+        plus_nugget = np.hstack((self.rverr**2, self.sig_rhk**2, self.sig_bis**2))
+        plus_nugget = plus_nugget * np.identity(3 * self.t.size)    # equal to (4)
+        K = K + plus_nugget     # equal to (5)
+        K = (1 - nuggest_value)*K + nuggest_value*np.diag(np.diag(K))   # equal to (6)
 
 #        import matplotlib.pyplot as pl
 #        pl.imshow(K)
@@ -222,18 +222,16 @@ class BIGgp(object):
         K = self.compute_matrix(a)
 
         try:
-            L1 = cho_factor(K,check_finite=False)
-            sol = cho_solve(L1, y)
-            n = y.size
-            log_like = - 0.5*np.dot(y, sol) \
+            L1 = cho_factor(K, overwrite_a=True, lower=False)
+            log_like = - 0.5*np.dot(y.T, cho_solve(L1, y)) \
                        - np.sum(np.log(np.diag(L1[0]))) \
-                       - n*0.5*np.log(2*np.pi)        
+                       - 0.5*y.size*np.log(2*np.pi)
         except LinAlgError:
             return -np.inf
 #            K2=np.linalg.inv(K)
 #            n = y.size
 #            log_like = -0.5* np.dot(np.dot(y.T,K2),y) \
-#                       -np.sum(np.log(np.diag(K))) \
+#                       -0.5*np.log(np.linalg.det(K)) \
 #                       -n*0.5*np.log(2*np.pi) 
         return log_like
 
