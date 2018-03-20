@@ -13,8 +13,8 @@ from scipy.stats import multivariate_normal
 from scipy.optimize import minimize
 
 ### a = [l, vc, vr, lc, bc, br] -> kernel parameters
-a = np.array([10, 10, 10, 10, 10, 10])
-
+a = np.array([1, 1, 1, 10, 1, 1])
+b = np.exp(1)
 
 ### Example for the squared exponential  #######################################
 ### 1st set pf data - original data
@@ -53,6 +53,9 @@ print('2nd try ->', gpObj.log_likelihood(a, y))
 print()
 ################################################################################
 ### one of rajpaul's dataset from jones et al. 2017
+### a = [l, vc, vr, lc, bc, br] -> kernel parameters
+a = np.array([1, 1, -1, -1, -1, -1])
+
 t, rv, rhk, bis, rvyerr, sig_rhk,bis_err  = np.loadtxt("rajpaul_hd_fine_datasets.csv",delimiter=',',skiprows=1,unpack=True)
 gpObj = BIGgp(kernels.SquaredExponential, t=t, rv=rv, rverr=rvyerr,
                     bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
