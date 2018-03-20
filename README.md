@@ -1,9 +1,17 @@
 # mini-frame
 
-<img align="left" width="150" height="170" src="https://musingsonmath.files.wordpress.com/2011/04/gauss_portrait.jpg">
+A implementation of the Gaussian process framework described in [Rajpaul et al. (2015)](https://academic.oup.com/mnras/article/452/3/2269/1079217). 
 
-A mini implementation of the Gaussian process framework described in [Rajpaul et al. (2015)](https://academic.oup.com/mnras/article/452/3/2269/1079217). 
+-------------------------
 
+To install just type in the terminal
+
+     python setup.py develop
+  
+Then you can imported it just like a normal python package with
+     
+     import miniframe
+     
 -------------------------
 
 ###### Needed software
@@ -12,3 +20,5 @@ A mini implementation of the Gaussian process framework described in [Rajpaul et
 [emcee](http://dfm.io/emcee/current/)
 [matplotlib](https://matplotlib.org/)
 
+
+<img align="center" width="150" height="170" src="https://musingsonmath.files.wordpress.com/2011/04/gauss_portrait.jpg">

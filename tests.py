@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import kernels
-from BIGgp import BIGgp
-from BIGgp import isposdef
+from miniframe import kernels
+from miniframe.BIGgp import BIGgp
+from miniframe.BIGgp import isposdef
 
 import numpy as np
 import emcee

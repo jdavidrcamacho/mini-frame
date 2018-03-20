@@ -3,7 +3,7 @@ from scipy.linalg import cho_factor, cho_solve, LinAlgError, eigh
 from scipy.stats import multivariate_normal
 import matplotlib.pyplot as plt 
 
-from kernels import SquaredExponential
+from miniframe.kernels import SquaredExponential
 
 def scale(x, xerr):
     """ 
