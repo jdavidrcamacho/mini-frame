@@ -104,7 +104,7 @@ class dSE_dt1(SquaredExponential):
         self.ell = ell
     
     def __call__(self, r):
-        f1 = np.abs(r)
+        f1 = r
         f2 = self.ell**2 
         return -f1/f2 * np.exp(-0.5* f1*f1/f2)
 
@@ -119,7 +119,7 @@ class dSE_dt2(SquaredExponential):
         self.ell = ell
     
     def __call__(self, r):
-        f1 = np.abs(r)
+        f1 = r
         f2 = self.ell**2
         return f1/f2 * np.exp(-0.5* f1*f1/f2)
         
@@ -137,7 +137,7 @@ class ddSE_dt2dt1(SquaredExponential):
     def __call__(self, r):
         f1 = r**2
         f2 = self.ell**2
-        return (1/f2 - f1/f2**2) * np.exp(-0.5* f1/f2)
+        return (1/f2 - f1/(f2*f2)) * np.exp(-0.5* f1/f2)
 
 
 # Quasi-periodic kernel
