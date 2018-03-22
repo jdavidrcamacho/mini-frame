@@ -148,8 +148,8 @@ class BIGgp(object):
 
         gammagg  = self._kernel_matrix(self.kernel(*kpars), x)
         gammadgdg = self._kernel_matrix(self.ddKdt2dt1(*kpars), x)
-        gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)
-        gammadgg = self._kernel_matrix(self.dKdt2(*kpars), x)
+        gammagdg = self._kernel_matrix(self.dKdt2(*kpars), x)
+        gammadgg = self._kernel_matrix(self.dKdt1(*kpars), x)
         return vc*bc*gammagg + vr*br* gammadgdg + vc*br*gammagdg + vr*bc*gammadgg
 
 
@@ -159,7 +159,7 @@ class BIGgp(object):
         vc, vr, lc, bc, br = self._scaling_pars(a)
 
         gammagg  = self._kernel_matrix(self.kernel(*kpars), x)
-        gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)
+        gammagdg = self._kernel_matrix(self.dKdt2(*kpars), x)
         return lc*bc*gammagg + lc*br*gammagdg
 
 
