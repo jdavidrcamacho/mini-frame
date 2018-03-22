@@ -14,7 +14,6 @@ def scale(x, xerr):
     return (x-m)/s, xerr/s
 
 
-
 class BIGgp(object):
     def __init__(self, kernel, t, rv, rverr, bis, sig_bis, rhk, sig_rhk):
         
@@ -65,7 +64,6 @@ class BIGgp(object):
         print ('removing mean from RVs: %f' % rv.mean())
         print ('dividing RVs by std: %f' % rv.std())
         rv, rverr = scale(rv, rverr)
-
 
         print ('removing mean from BIS: %f' % bis.mean())
         print ('dividing BIS by std: %f' % bis.std())
@@ -123,7 +121,6 @@ class BIGgp(object):
         """ Equation 20 """
         kpars = self._kernel_pars(a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
-
 
         gammagg  = self._kernel_matrix(self.kernel(*kpars), x)
         gammadgdg = self._kernel_matrix(self.ddKdt2dt1(*kpars), x)
@@ -207,12 +204,8 @@ class BIGgp(object):
                        - 0.5*y.size*np.log(2*np.pi)
         except LinAlgError:
             return -np.inf
-#            K2=np.linalg.inv(K)
-#            n = y.size
-#            log_like = -0.5* np.dot(np.dot(y.T,K2),y) \
-#                       -0.5*np.log(np.linalg.det(K)) \
-#                       -n*0.5*np.log(2*np.pi) 
         return log_like
+
 
     def minus_log_likelihood(self, a, y):
         return - self.log_likelihood(a, y)
@@ -245,7 +238,6 @@ def show_and_check(gp, a):
     (k11, k21, k31), (k12, k22, k32), (k13, k23, k33) = \
                     [np.vsplit(c, gp.L+1) for c in np.hsplit(K, gp.L+1)]
     mats = (k11, k21, k31), (k12, k22, k32), (k13, k23, k33)
-
 
     for i in range(gp.L+1):
         for j in range(gp.L+1):
