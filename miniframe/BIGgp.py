@@ -28,7 +28,6 @@ class BIGgp(object):
         self.rhk = rhk
         self.sig_rhk = sig_rhk
         self.L = 2
-        # assert self.L == 2, 'for now I only work with RVs, Rhk and BIS... sorry'
 
         self.yerr = np.array([rverr, sig_bis, sig_rhk])
         self.tt = np.tile(t, self.L+1)
@@ -160,7 +159,7 @@ class BIGgp(object):
         return lc*bc*gammagg + lc*br*gammagdg
 
 
-    def compute_matrix(self, a, yerr=True):
+    def compute_matrix(self, a, yerr=True, nugget=False):
         """ Creates the big covariance matrix, equations 24 in the paper """ 
         print ('Vc:%.2f  Vr:%.2f  Lc:%.2f  Bc:%.2f  Br:%.2f' % tuple(self._scaling_pars(a)))
 
@@ -181,11 +180,17 @@ class BIGgp(object):
         K1 = np.hstack((K11, K12, K13))
         K2 = np.hstack((K12.T, K22, K23))
         K3 = np.hstack((K13.T, K23.T, K33))
-        K = np.vstack((K1, K2, K3))     # equal to (2)
+        K = np.vstack((K1, K2, K3))
+
+        if nugget:
+            #To give more "weight" to the diagonal
+            nugget_value = 0.01
+            K = (1 - nugget_value)*K + nugget_value*np.diag(np.diag(K))
+
         return K
 
 
-    def log_likelihood(self, a, y):
+    def log_likelihood(self, a, y, nugget = True):
         """ Calculates the marginal log likelihood
 
         Parameters:
@@ -207,8 +212,8 @@ class BIGgp(object):
         return log_like
 
 
-    def minus_log_likelihood(self, a, y):
-        return - self.log_likelihood(a, y)
+    def minus_log_likelihood(self, a, y, nugget = True):
+        return - self.log_likelihood(a, y, nugget = True)
 
 
     def sample(self, a):

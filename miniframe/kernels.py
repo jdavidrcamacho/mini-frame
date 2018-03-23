@@ -159,13 +159,14 @@ class QuasiPeriodic(kernel):
         self.period = period
 
     def __call__(self, r):
-        f1 = np.abs(r)
+        f1 = r
+        f11 = r**2
         f2 = self.ell_p**2
         f3 = self.ell_e**2
         f4 = self.period
         
-        f5 = np.sin(np.pi*f1/f4)
-        return np.exp( -(2.0*f5*f5/f2) - 0.5*f1/f3 )
+        f5 = np.sin(np.pi*f1/f4)**2
+        return np.exp( -(2.0*f5/f2) - 0.5*f11/f3 )
 
 
 class dQP_dt1(QuasiPeriodic):
@@ -180,14 +181,16 @@ class dQP_dt1(QuasiPeriodic):
         self.period = period
 
     def __call__(self, r):
-        f1 = np.abs(r)
+        f1 = r
+        f11 = r**2
         f2 = self.ell_p**2
         f3 = self.ell_e**2
         f4 = self.period
-
+        
         f5 = np.sin(np.pi*f1/f4)
+        f55 = np.sin(np.pi*f1/f4)**2
         f6 = np.cos(np.pi*f1/f4)
-        f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1/f3 )
+        f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
         return (-(4*np.pi*f5*f6)/(f2*f4) - f1/f3) *f7 
 
 
@@ -203,14 +206,16 @@ class dQP_dt2(QuasiPeriodic):
         self.period = period
 
     def __call__(self, r):
-        f1 = np.abs(r)
+        f1 = r
+        f11 = r**2
         f2 = self.ell_p**2
         f3 = self.ell_e**2
         f4 = self.period
-
+        
         f5 = np.sin(np.pi*f1/f4)
+        f55 = np.sin(np.pi*f1/f4)**2
         f6 = np.cos(np.pi*f1/f4)
-        f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1/f3 )
+        f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
         return ((4*np.pi*f5*f6)/(f2*f4) + f1/f3) *f7 
 
 
@@ -226,16 +231,20 @@ class ddQP_dt2dt1(QuasiPeriodic):
         self.period = period
 
     def __call__(self, r):
-        f1 = np.abs(r)
+        f1 = r
+        f11 = r**2
         f2 = self.ell_p**2
         f3 = self.ell_e**2
         f4 = self.period
-        
+        f44 = self.period**2
+
         f5 = np.sin(np.pi*f1/f4)
+        f55 = np.sin(np.pi*f1/f4)**2
         f6 = np.cos(np.pi*f1/f4)
-        f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1/f3 )
+        f66 = np.cos(np.pi*f1/f4)**2
+        f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
+        
         f8 = (-(4*np.pi*f5*f6)/(f2*f4) - f1/f3)
-        f9 = ((4*np.pi*f5*f6)/(f2*f4) + f1/f3) 
-        return f8*f9*f7 + (1.0/f3 + 4*np.pi*np.pi*f6*f6/(f2*f4*f4) /
-                           -4*np.pi*np.pi*f5*f5/(f2*f4*f4)) *f7 
+        f9 = ((4*np.pi*f5*f6)/(f2*f4) + f1/f3)
+        return f8*f9*f7 + (1.0/f3 + 4*np.pi*np.pi*f66/(f2*f44) - 4*np.pi*np.pi*f55/(f2*f44)) *f7 
 
