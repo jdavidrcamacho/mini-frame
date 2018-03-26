@@ -232,9 +232,9 @@ class BIGgp(object):
 
         Returns
             log_like = marginal log likelihood
-    """
+        """
         Pk, e, Krv, w = b
-        T=0 #T = zero phase, we might need to change this in the future
+        T=0 #T = zero phase, constant for now we'll need to change it in the future
 
         #mean anomaly
         Mean_anom=[2*np.pi*(x1-T)/Pk  for x1 in self.t]
@@ -256,27 +256,19 @@ class BIGgp(object):
         RV=[Krv*(e*np.cos(w)+np.cos(w+x6)) for x6 in nu]
 
         K = self.compute_matrix(a)
-        length = int((y.size )/3) #divide by the number of equations
-        y[0:length] = y[0:length] - np.array(RV) #to include the keplerian function
+        length = int((y.size )/3)                #divide by the number of equations
+        y[0:length] = y[0:length] - np.array(RV) #to include the keplerian function data
         try:
             L1 = cho_factor(K, overwrite_a=True, lower=False)
-            log_like = - 0.5*np.dot(y.T, cho_solve(L1, y)) \
-                       - np.sum(np.log(np.diag(L1[0]))) \
-                       - 0.5*y.size*np.log(2*np.pi)
+            log_like = - 0.5*np.dot(y.T, cho_solve(L1, y)) - np.sum(np.log(np.diag(L1[0]))) - 0.5*y.size*np.log(2*np.pi)
         except LinAlgError:
             return -np.inf
         return log_like
 
-#        K=cov_matrix.build_bigmatrix(kern, new_a, x, y, yerr)
-#        K = K + yerr**2*np.identity(len(x))
-#        L1 = cho_factor(K)
-#        new_y = np.array(y) - np.array(RV) #to include the keplerian function   
-#        sol = cho_solve(L1, new_y)
-#        n = new_y.size
-#        log_like = -0.5*np.dot(new_y, sol) \
-#              - np.sum(np.log(np.diag(L1[0]))) \
-#              - n*0.5*np.log(2*np.pi)
-#        return log_like
+
+    def minus_kepler_likelihood(self, a, b, y, nugget = True):
+        """ Equal to -kepler_likelihood(self, a, y, nugget = True) """
+        return - self.kepler_likelihood(a, b, y, nugget = True)
 
 
     def sample(self, a):
