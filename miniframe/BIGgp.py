@@ -191,7 +191,8 @@ class BIGgp(object):
 
 
     def log_likelihood(self, a, y, nugget = True):
-        """ Calculates the marginal log likelihood
+        """ Calculates the marginal log likelihood. 
+        On it we consider the mean function to be zero.
 
         Parameters:
             a = array with the scaling parameters
@@ -213,7 +214,69 @@ class BIGgp(object):
 
 
     def minus_log_likelihood(self, a, y, nugget = True):
+        """ Equal to -log_likelihood(self, a, y, nugget = True) """
         return - self.log_likelihood(a, y, nugget = True)
+
+
+    def kepler_likelihood(self, a, b, y, nugget = True):
+        """ Calculates the marginal log likelihood.
+        On it we consider the mean function to be given by a  keplerian function.
+    
+        Parameters
+            a = array with the important parameters
+            b = array with the keplerian parameters; ATTENTION this
+                    array contain the parameters P (period in days), 
+                    e (eccentricity), Krv (RV amplitude), and 
+                    w (longitude of the periastron) of the keplerian function.
+            y = range of values of te dependent variable (the measurments)
+
+        Returns
+            log_like = marginal log likelihood
+    """
+        Pk, e, Krv, w = b
+        T=0 #T = zero phase, we might need to change this in the future
+
+        #mean anomaly
+        Mean_anom=[2*np.pi*(x1-T)/Pk  for x1 in self.t]
+        #eccentric anomaly -> E0=M + e*sin(M) + 0.5*(e**2)*sin(2*M)
+        E0=[x1 + e*np.sin(x1)  + 0.5*(e**2)*np.sin(2*x1) for x1 in Mean_anom]
+        #mean anomaly -> M0=E0 - e*sin(E0)
+        M0=[x1 - e*np.sin(x1) for x1 in E0]
+
+        i=0
+        while i<100:
+            #[x + y for x, y in zip(first, second)]
+            calc_aux=[x2-y2 for x2,y2 in zip(Mean_anom,M0)]
+            E1=[x3 + y3/(1-e*np.cos(x3)) for x3,y3 in zip(E0,calc_aux)]
+            M1=[x4 - e*np.sin(x4) for x4 in E0]
+            i+=1
+            E0=E1
+            M0=M1
+        nu=[2*np.arctan(np.sqrt((1+e)/(1-e))*np.tan(x5/2)) for x5 in E0]
+        RV=[Krv*(e*np.cos(w)+np.cos(w+x6)) for x6 in nu]
+
+        K = self.compute_matrix(a)
+        length = int((y.size )/3) #divide by the number of equations
+        y[0:length] = y[0:length] - np.array(RV) #to include the keplerian function
+        try:
+            L1 = cho_factor(K, overwrite_a=True, lower=False)
+            log_like = - 0.5*np.dot(y.T, cho_solve(L1, y)) \
+                       - np.sum(np.log(np.diag(L1[0]))) \
+                       - 0.5*y.size*np.log(2*np.pi)
+        except LinAlgError:
+            return -np.inf
+        return log_like
+
+#        K=cov_matrix.build_bigmatrix(kern, new_a, x, y, yerr)
+#        K = K + yerr**2*np.identity(len(x))
+#        L1 = cho_factor(K)
+#        new_y = np.array(y) - np.array(RV) #to include the keplerian function   
+#        sol = cho_solve(L1, new_y)
+#        n = new_y.size
+#        log_like = -0.5*np.dot(new_y, sol) \
+#              - np.sum(np.log(np.diag(L1[0]))) \
+#              - n*0.5*np.log(2*np.pi)
+#        return log_like
 
 
     def sample(self, a):
