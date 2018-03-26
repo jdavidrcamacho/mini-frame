@@ -15,7 +15,18 @@ from scipy.optimize import minimize
 ### a = [lp,le,p, vc,vr, lc, bc,br] -> kernel parameters
 b = np.exp(1)
 c = np.exp(10)
-a = np.array([b,b,b, 1,0, 0, 0,0])
+#a = np.array([b,b,b, 1,0, 0, 0,0])
+d = np.array([ np.random.uniform(np.exp(-100), 100),
+                  np.random.uniform(np.exp(-100), 100), 
+                  np.random.uniform(np.exp(-100), 50), 
+                  np.random.uniform(np.exp(-100), 100), 
+                  np.random.uniform(np.exp(-100), 100), 
+                  np.random.uniform(np.exp(-100), 100), 
+                  np.random.uniform(np.exp(-100), 100), 
+                  np.random.uniform(np.exp(-100), 100) ])
+
+#a = np.array([1, 1, 10, -1, 10, 1000])
+a = d
 
 ### Example for the squared exponential  #######################################
 ### 1st set pf data - original data
@@ -47,10 +58,10 @@ k21 = matriz[228:456, 0:228]     #equal to k12.T
 k31 = matriz[456:684, 0:228]     #equal to k13.T
 k32 = matriz[456:684, 228:456]   #equal to k23.T
 
-kernel = 1 #just in case I don't want things to run
+kernel = True #just in case I don't want things to run
 #### simple sample and marginalization with emcee
-runs, burns = 15000, 15000
-if kernel == 1:
+runs, burns = 100, 100
+if kernel:
     #probabilistic model
     def logprob(p):
         #print np.exp(p)
@@ -100,25 +111,25 @@ if kernel == 1:
     axes[0].plot(np.exp(sampler.chain[:, burns:, 0]).T, color="k", alpha=0.4)
     axes[0].yaxis.set_major_locator(MaxNLocator(5))
     axes[0].set_ylabel("$lp$")
-    axes[1].plot(np.exp(sampler.chain[:, burns:, 0]).T, color="k", alpha=0.4)
+    axes[1].plot(np.exp(sampler.chain[:, burns:, 1]).T, color="k", alpha=0.4)
     axes[1].yaxis.set_major_locator(MaxNLocator(5))
     axes[1].set_ylabel("$le$")
-    axes[2].plot(np.exp(sampler.chain[:, burns:, 0]).T, color="k", alpha=0.4)
+    axes[2].plot(np.exp(sampler.chain[:, burns:, 2]).T, color="k", alpha=0.4)
     axes[2].yaxis.set_major_locator(MaxNLocator(5))
-    axes[2].set_ylabel("$period$")
-    axes[3].plot(sampler.chain[:, burns:, 1].T, color="k", alpha=0.4) #log
+    axes[2].set_ylabel("$P$")
+    axes[3].plot(np.exp(sampler.chain[:, burns:, 3]).T, color="k", alpha=0.4)
     axes[3].yaxis.set_major_locator(MaxNLocator(5))
     axes[3].set_ylabel("$Vc$")
-    axes[4].plot(sampler.chain[:, burns:, 2].T, color="k", alpha=0.4) #log
+    axes[4].plot(np.exp(sampler.chain[:, burns:, 4]).T, color="k", alpha=0.4)
     axes[4].yaxis.set_major_locator(MaxNLocator(5))
     axes[4].set_ylabel("$Vr$")
-    axes[5].plot(sampler.chain[:, burns:, 3].T, color="k", alpha=0.4) #log 
+    axes[5].plot(np.exp(sampler.chain[:, burns:, 5]).T, color="k", alpha=0.4)
     axes[5].yaxis.set_major_locator(MaxNLocator(5))
     axes[5].set_ylabel("$Lc$")
-    axes[6].plot(sampler.chain[:, burns:, 4].T, color="k", alpha=0.4) #log
+    axes[6].plot(np.exp(sampler.chain[:, burns:, 6]).T, color="k", alpha=0.4)
     axes[6].yaxis.set_major_locator(MaxNLocator(5))
     axes[6].set_ylabel("$Bc$")
-    axes[7].plot(sampler.chain[:, burns:, 5].T, color="k", alpha=0.4) #log
+    axes[7].plot(np.exp(sampler.chain[:, burns:, 7]).T, color="k", alpha=0.4)
     axes[7].yaxis.set_major_locator(MaxNLocator(5))
     axes[7].set_ylabel("$Br$")
     axes[7].set_xlabel("step number")
@@ -129,13 +140,13 @@ if kernel == 1:
     burnin = burns
     samples = sampler.chain[:, burnin:, :].reshape((-1, ndim))
     samples[:, 0] = np.exp(samples[:, 0])   #lp
-    samples[:, 0] = np.exp(samples[:, 0])   #le
-    samples[:, 0] = np.exp(samples[:, 0])   #Period
-    samples[:, 1] = np.exp(samples[:, 1])   #Vc
-    samples[:, 2] = np.exp(samples[:, 2])   #Vr
-    samples[:, 3] = np.exp(samples[:, 3])   #Lc
-    samples[:, 4] = np.exp(samples[:, 4])   #Bc
-    samples[:, 5] = np.exp(samples[:, 5])   #Br
+    samples[:, 1] = np.exp(samples[:, 1])   #le
+    samples[:, 2] = np.exp(samples[:, 2])   #Period
+    samples[:, 3] = np.exp(samples[:, 3])   #Vc
+    samples[:, 4] = np.exp(samples[:, 4])   #Vr
+    samples[:, 5] = np.exp(samples[:, 5])   #Lc
+    samples[:, 6] = np.exp(samples[:, 6])   #Bc
+    samples[:, 7] = np.exp(samples[:, 7])   #Br
 
     lp_mcmc,le_mcmc,p_mcmc,vc_mcmc,vr_mcmc,lc_mcmc,bc_mcmc,br_mcmc = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                                  zip(*np.percentile(samples, [16, 50, 84],axis=0)))

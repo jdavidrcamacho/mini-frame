@@ -57,7 +57,7 @@ k32 = matriz[456:684, 228:456]   #equal to k23.T
 
 kernel = 1 #just in case I don't want things to run
 #### simple sample and marginalization with emcee
-runs, burns = 15000, 15000
+runs, burns = 100, 100
 if kernel == 1:
     #probabilistic model
     def logprob(p):
