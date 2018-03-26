@@ -41,7 +41,7 @@ y=np.hstack((rv,rhk,bis))
 #error in measurements
 yerr=np.hstack((rvyerr,sig_rhk,2*rvyerr))
 # #log-likelihood
-print('1st try ->', gpObj.log_likelihood(a, y))
+print('1st try ->', gpObj.log_likelihood(a, y, kepler = False))
 print()
 
 k11 = matriz[0:228, 0:228]
@@ -55,10 +55,10 @@ k21 = matriz[228:456, 0:228]     #equal to k12.T
 k31 = matriz[456:684, 0:228]     #equal to k13.T
 k32 = matriz[456:684, 228:456]   #equal to k23.T
 
-kernel = 1 #just in case I don't want things to run
+kernel = True #just in case I don't want things to run
 #### simple sample and marginalization with emcee
 runs, burns = 100, 100
-if kernel == 1:
+if kernel:
     #probabilistic model
     def logprob(p):
         if any([p[0] < -100, p[0] > np.log(5),

@@ -75,7 +75,7 @@ if kernel:
                 p[7] < -100, p[7] > np.log(25)]):
             return -np.inf
         logprior = 0.0
-        return logprior + gpObj.log_likelihood(p, y)
+        return logprior + gpObj.log_likelihood(np.exp(p), y)
 
     lp_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10))          #[exp(-10) to exp(10)]
     le_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10))          #[exp(-10) to exp(10)]
