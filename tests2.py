@@ -85,7 +85,7 @@ if kernel:
     lc_prior = stats.uniform(np.exp(-100), 25 -np.exp(-100))                    #[exp(-100) to 25]
     bc_prior = stats.uniform(np.exp(-100), 50 -np.exp(-100))                    #[exp(-100) to 50]
     br_prior = stats.uniform(np.exp(-100), 25 -np.exp(-100))                     #[exp(-100) to 25]
-    
+
     def from_prior():
         return np.array([ lp_prior.rvs(), le_prior.rvs(), p_prior.rvs(),vc_prior.rvs(),
                          vr_prior.rvs(),lc_prior.rvs(),bc_prior.rvs(),br_prior.rvs() ])

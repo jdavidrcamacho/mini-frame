@@ -12,6 +12,8 @@ from scipy import stats
 from scipy.stats import multivariate_normal
 from scipy.optimize import minimize
 
+### Now we use the kepler_likelihood
+
 ### a = [l, vc, vr, lc, bc, br] -> kernel parameters
 a = np.array([1, 1, 10, -1, 10, 10])
 ### b = [P, e, K, w] -> keplerian parameters
@@ -93,7 +95,7 @@ print()
 
 kernel = True #just in case I don't want things to run
 #### simple sample and marginalization with emcee
-runs, burns = 100, 100
+runs, burns = 500, 500
 if kernel:
     #probabilistic model
     def logprob(p):
