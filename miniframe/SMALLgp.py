@@ -5,7 +5,7 @@ from scipy.linalg import cho_factor, cho_solve, LinAlgError, eigh
 from scipy.stats import multivariate_normal
 from sys import exit
 
-from bigframe.kernels import SquaredExponential
+from miniframe.kernels import SquaredExponential
 
 
 class SMALLgp(object):
