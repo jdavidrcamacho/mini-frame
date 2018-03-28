@@ -310,7 +310,7 @@ class dddQP_dt2ddt1(QuasiPeriodic):
         
         f5 = np.sin(np.pi*f1/f4)
         f6 = np.cos(np.pi*f1/f4)
-        f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f/f3 ))
+        f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f1/f3 )
         f8 = (-(4*np.pi*f5*f6)/(f2*f4) - f1/f3)
         f9 = ((4*np.pi*f5*f6)/(f2*f4) + f1/f3) 
         f10 = (1.0/f3 + 4*np.pi*np.pi*f6*f6/(f2*f4*f4) - 4*np.pi*np.pi*f5*f5/(f2*f4*f4))*f7
