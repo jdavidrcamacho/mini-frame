@@ -10,5 +10,5 @@
 """
 
 from miniframe import BIGgp
-from miniframe import SMALLgps
+from miniframe import SMALLgp
 from miniframe import kernels
