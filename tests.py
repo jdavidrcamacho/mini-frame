@@ -3,7 +3,7 @@ from miniframe import kernels
 from miniframe.BIGgp import BIGgp
 from miniframe.BIGgp import isposdef
 
-from miniframe.mean2 import Constant, Linear, Keplerian
+from miniframe.means import Constant, Linear, Keplerian
 
 import sys
 import numpy as np
@@ -24,7 +24,7 @@ d = np.array([ np.random.uniform(np.exp(-100), 1),
                   np.random.uniform(np.exp(-100), 100), 
                   np.random.uniform(np.exp(-100), 100) ])
 a = d
-b = [10,0.5,15,80,0, 2, 1,2] 
+b = [10, 15, 0.5, 80, 0, 2, 1, 2] 
 
 ### Example for the squared exponential  #######################################
 ### 1st set pf data - original data
@@ -32,7 +32,7 @@ t,rv, rvyerr, bis, rhk,sig_rhk = np.loadtxt("HD41248_harps.rdb",skiprows=2,unpac
 #t = np.linspace(1, 300, 228)
 bis_err=2*rvyerr
 
-gpObj = BIGgp(kernels.SquaredExponential,[Keplerian,Constant, Linear] , t=t, rv=rv, rverr=rvyerr,
+gpObj = BIGgp(kernels.SquaredExponential,[Keplerian, Constant, Linear] , t=t, rv=rv, rverr=rvyerr,
                     bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
 
 y=np.hstack((rv,rhk,bis))
@@ -49,9 +49,10 @@ y=np.hstack((rv,rhk,bis))
 yerr=np.hstack((rvyerr,sig_rhk,2*rvyerr))
 
 # #log-likelihood
-print('no mean function', gpObj.log_likelihood(a, b, y))
+print('no mean function', gpObj.log_likelihood(a, [], y))
 print()
 
+sys.exit(0)
 
 matriz  = gpObj.compute_matrix(a)
 k11 = matriz[0:228, 0:228]
