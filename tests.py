@@ -2,6 +2,9 @@
 from miniframe import kernels
 from miniframe.BIGgp import BIGgp
 from miniframe.BIGgp import isposdef
+
+from miniframe.mean2 import Constant, Linear, Keplerian
+
 import sys
 import numpy as np
 import emcee
@@ -31,7 +34,7 @@ t,rv, rvyerr, bis, rhk,sig_rhk = np.loadtxt("HD41248_harps.rdb",skiprows=2,unpac
 #t = np.linspace(1, 300, 228)
 bis_err=2*rvyerr
 
-gpObj = BIGgp(kernels.SquaredExponential, t=t, rv=rv, rverr=rvyerr,
+gpObj = BIGgp(kernels.SquaredExponential,[Keplerian(10,0.5,15,80,0),Constant(10), None] , t=t, rv=rv, rverr=rvyerr,
                     bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
 matriz = gpObj.compute_matrix(a)
 print(isposdef(matriz))
@@ -41,7 +44,7 @@ y=np.hstack((rv,rhk,bis))
 #error in measurements
 yerr=np.hstack((rvyerr,sig_rhk,2*rvyerr))
 # #log-likelihood
-print('1st try ->', gpObj.log_likelihood(a, y, kepler = False))
+print('1st try ->', gpObj.log_likelihood(a, y))
 print()
 
 k11 = matriz[0:228, 0:228]
@@ -55,7 +58,7 @@ k21 = matriz[228:456, 0:228]     #equal to k12.T
 k31 = matriz[456:684, 0:228]     #equal to k13.T
 k32 = matriz[456:684, 228:456]   #equal to k23.T
 
-kernel = True #just in case I don't want things to run
+kernel = False #just in case I don't want things to run
 #### simple sample and marginalization with emcee
 runs, burns = 100, 100
 if kernel:
