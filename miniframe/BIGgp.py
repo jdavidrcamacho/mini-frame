@@ -4,6 +4,7 @@ from scipy.stats import multivariate_normal
 import matplotlib.pyplot as plt 
 
 from miniframe.kernels import SquaredExponential
+from mean_mean import Linear
 
 def scale(x, xerr):
     """ 
@@ -15,11 +16,12 @@ def scale(x, xerr):
 
 
 class BIGgp(object):
-    def __init__(self, kernel, t, rv, rverr, bis, sig_bis, rhk, sig_rhk):
+    def __init__(self, kernel, MeanModel, t, rv, rverr, bis, sig_bis, rhk, sig_rhk):
         
         self.kernel = kernel
-        self.dKdt1, self.dKdt2, self.ddKdt2dt1 = self.kernel.__subclasses__()
-
+        self.MeanModel = MeanModel
+        self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
+#        self.means = means #by default the means are None for all cases
         self.t = t
         self.rv = rv
         self.rverr = rverr
@@ -91,9 +93,14 @@ class BIGgp(object):
             return [lp, le, p]
 
 
+    def _mean_vector(self, MeanModel, x):
+        """ returns the value of the mean function """
+        return MeanModel(self.t)
+
+
     def _scaling_pars(self, a):
         return a[-5:]
-    
+
 
     def k11(self, a, x):
         """ Equation 18 """
@@ -202,6 +209,13 @@ class BIGgp(object):
             marginal log likelihood
         """
         K = self.compute_matrix(a)
+        m = self.MeanModel
+        for i in range(3):
+            if m[i] is None:
+                y[self.t.size*i : self.t.size*(i+1)] = y[self.t.size*i : self.t.size*(i+1)]
+            else:
+                mean_value = self._mean_vector(m[i],self.t)
+                y[self.t.size*i : self.t.size*(i+1)] = y[self.t.size*i : self.t.size*(i+1)] - mean_value
 
         try:
             L1 = cho_factor(K, overwrite_a=True, lower=False)
@@ -218,57 +232,57 @@ class BIGgp(object):
         return - self.log_likelihood(a, y, nugget = True)
 
 
-    def kepler_likelihood(self, a, b, y, nugget = True):
-        """ Calculates the marginal log likelihood.
-        On it we consider the mean function to be given by a  keplerian function.
-    
-        Parameters
-            a = array with the important parameters
-            b = array with the keplerian parameters; ATTENTION this
-                    array contain the parameters P (period in days), 
-                    e (eccentricity), Krv (RV amplitude), and 
-                    w (longitude of the periastron) of the keplerian function.
-            y = range of values of te dependent variable (the measurments)
-
-        Returns
-            log_like = marginal log likelihood
-        """
-        Pk, e, Krv, w = b
-        T=0 #T = zero phase, constant for now we'll need to change it in the future
-
-        #mean anomaly
-        Mean_anom=[2*np.pi*(x1-T)/Pk  for x1 in self.t]
-        #eccentric anomaly -> E0=M + e*sin(M) + 0.5*(e**2)*sin(2*M)
-        E0=[x1 + e*np.sin(x1)  + 0.5*(e**2)*np.sin(2*x1) for x1 in Mean_anom]
-        #mean anomaly -> M0=E0 - e*sin(E0)
-        M0=[x1 - e*np.sin(x1) for x1 in E0]
-
-        i=0
-        while i<100:
-            #[x + y for x, y in zip(first, second)]
-            calc_aux=[x2-y2 for x2,y2 in zip(Mean_anom,M0)]
-            E1=[x3 + y3/(1-e*np.cos(x3)) for x3,y3 in zip(E0,calc_aux)]
-            M1=[x4 - e*np.sin(x4) for x4 in E0]
-            i+=1
-            E0=E1
-            M0=M1
-        nu=[2*np.arctan(np.sqrt((1+e)/(1-e))*np.tan(x5/2)) for x5 in E0]
-        RV=[Krv*(e*np.cos(w)+np.cos(w+x6)) for x6 in nu]
-
-        K = self.compute_matrix(a)
-        length = int((y.size )/3)                #divide by the number of equations
-        y[0:length] = y[0:length] - np.array(RV) #to include the keplerian function data
-        try:
-            L1 = cho_factor(K, overwrite_a=True, lower=False)
-            log_like = - 0.5*np.dot(y.T, cho_solve(L1, y)) - np.sum(np.log(np.diag(L1[0]))) - 0.5*y.size*np.log(2*np.pi)
-        except LinAlgError:
-            return -np.inf
-        return log_like
-
-
-    def minus_kepler_likelihood(self, a, b, y, nugget = True):
-        """ Equal to -kepler_likelihood(self, a, y, nugget = True) """
-        return - self.kepler_likelihood(a, b, y, nugget = True)
+#    def kepler_likelihood(self, a, b, y, nugget = True):
+#        """ Calculates the marginal log likelihood.
+#        On it we consider the mean function to be given by a  keplerian function.
+#    
+#        Parameters
+#            a = array with the important parameters
+#            b = array with the keplerian parameters; ATTENTION this
+#                    array contain the parameters P (period in days), 
+#                    e (eccentricity), Krv (RV amplitude), and 
+#                    w (longitude of the periastron) of the keplerian function.
+#            y = range of values of te dependent variable (the measurments)
+#
+#        Returns
+#            log_like = marginal log likelihood
+#        """
+#        Pk, e, Krv, w = b
+#        T=0 #T = zero phase, constant for now we'll need to change it in the future
+#
+#        #mean anomaly
+#        Mean_anom=[2*np.pi*(x1-T)/Pk  for x1 in self.t]
+#        #eccentric anomaly -> E0=M + e*sin(M) + 0.5*(e**2)*sin(2*M)
+#        E0=[x1 + e*np.sin(x1)  + 0.5*(e**2)*np.sin(2*x1) for x1 in Mean_anom]
+#        #mean anomaly -> M0=E0 - e*sin(E0)
+#        M0=[x1 - e*np.sin(x1) for x1 in E0]
+#
+#        i=0
+#        while i<100:
+#            #[x + y for x, y in zip(first, second)]
+#            calc_aux=[x2-y2 for x2,y2 in zip(Mean_anom,M0)]
+#            E1=[x3 + y3/(1-e*np.cos(x3)) for x3,y3 in zip(E0,calc_aux)]
+#            M1=[x4 - e*np.sin(x4) for x4 in E0]
+#            i+=1
+#            E0=E1
+#            M0=M1
+#        nu=[2*np.arctan(np.sqrt((1+e)/(1-e))*np.tan(x5/2)) for x5 in E0]
+#        RV=[Krv*(e*np.cos(w)+np.cos(w+x6)) for x6 in nu]
+#
+#        K = self.compute_matrix(a)
+#        length = int((y.size )/3)                #divide by the number of equations
+#        y[0:length] = y[0:length] - np.array(RV) #to include the keplerian function data
+#        try:
+#            L1 = cho_factor(K, overwrite_a=True, lower=False)
+#            log_like = - 0.5*np.dot(y.T, cho_solve(L1, y)) - np.sum(np.log(np.diag(L1[0]))) - 0.5*y.size*np.log(2*np.pi)
+#        except LinAlgError:
+#            return -np.inf
+#        return log_like
+#
+#
+#    def minus_kepler_likelihood(self, a, b, y, nugget = True):
+#        """ Equal to -kepler_likelihood(self, a, y, nugget = True) """
+#        return - self.kepler_likelihood(a, b, y, nugget = True)
 
 
     def sample(self, a):
