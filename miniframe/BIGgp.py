@@ -4,15 +4,6 @@ from scipy.stats import multivariate_normal
 import matplotlib.pyplot as plt 
 
 from miniframe.kernels import SquaredExponential
-from mean_mean import Linear
-
-def scale(x, xerr):
-    """ 
-    to x: subtract mean, divide by std 
-    to xerr: divide by std of x
-    """
-    m, s = x.mean(), x.std()
-    return (x-m)/s, xerr/s
 
 
 class BIGgp(object):
@@ -20,8 +11,8 @@ class BIGgp(object):
         
         self.kernel = kernel
         self.MeanModel = MeanModel
-        self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
-#        self.means = means #by default the means are None for all cases
+        self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, \
+            self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
         self.t = t
         self.rv = rv
         self.rverr = rverr
@@ -52,7 +43,8 @@ class BIGgp(object):
         """
         skip = kwargs.get('skiprows', 2)
         kwargs.get('unpack')
-        t, rv, rverr, bis, rhk, sig_rhk = np.loadtxt(filename, skiprows=skip, unpack=True, **kwargs)
+        t, rv, rverr, bis, rhk, sig_rhk = \
+                    np.loadtxt(filename, skiprows=skip, unpack=True, **kwargs)
 
         # print ('removing t[0] from times: %f' % t[0])
         # print ('dividing times by time span: %f' % t.ptp())
@@ -197,12 +189,13 @@ class BIGgp(object):
         return K
 
 
-    def log_likelihood(self, a, y, nugget = True):
+    def log_likelihood(self, a, b, y, nugget = True):
         """ Calculates the marginal log likelihood. 
         On it we consider the mean function to be zero.
 
         Parameters:
-            a = array with the scaling parameters
+            a = array with the kernel parameters
+            b = array with the mean functions parameters
             y = values of the dependent variable (the measurements)
 
         Returns:
@@ -212,10 +205,15 @@ class BIGgp(object):
         m = self.MeanModel
         for i in range(3):
             if m[i] is None:
-                y[self.t.size*i : self.t.size*(i+1)] = y[self.t.size*i : self.t.size*(i+1)]
+                y[self.t.size*i : self.t.size*(i+1)] = \
+                    y[self.t.size*i : self.t.size*(i+1)]
             else:
-                mean_value = self._mean_vector(m[i],self.t)
-                y[self.t.size*i : self.t.size*(i+1)] = y[self.t.size*i : self.t.size*(i+1)] - mean_value
+                size = m[i].__parsize__(m[i])
+                mean = m[i](b[0:size])
+                b = b[size:]
+                mean_value = self._mean_vector(mean,self.t)
+                y[self.t.size*i : self.t.size*(i+1)] = \
+                    y[self.t.size*i : self.t.size*(i+1)] - mean_value
 
         try:
             L1 = cho_factor(K, overwrite_a=True, lower=False)
@@ -232,59 +230,6 @@ class BIGgp(object):
         return - self.log_likelihood(a, y, nugget = True)
 
 
-#    def kepler_likelihood(self, a, b, y, nugget = True):
-#        """ Calculates the marginal log likelihood.
-#        On it we consider the mean function to be given by a  keplerian function.
-#    
-#        Parameters
-#            a = array with the important parameters
-#            b = array with the keplerian parameters; ATTENTION this
-#                    array contain the parameters P (period in days), 
-#                    e (eccentricity), Krv (RV amplitude), and 
-#                    w (longitude of the periastron) of the keplerian function.
-#            y = range of values of te dependent variable (the measurments)
-#
-#        Returns
-#            log_like = marginal log likelihood
-#        """
-#        Pk, e, Krv, w = b
-#        T=0 #T = zero phase, constant for now we'll need to change it in the future
-#
-#        #mean anomaly
-#        Mean_anom=[2*np.pi*(x1-T)/Pk  for x1 in self.t]
-#        #eccentric anomaly -> E0=M + e*sin(M) + 0.5*(e**2)*sin(2*M)
-#        E0=[x1 + e*np.sin(x1)  + 0.5*(e**2)*np.sin(2*x1) for x1 in Mean_anom]
-#        #mean anomaly -> M0=E0 - e*sin(E0)
-#        M0=[x1 - e*np.sin(x1) for x1 in E0]
-#
-#        i=0
-#        while i<100:
-#            #[x + y for x, y in zip(first, second)]
-#            calc_aux=[x2-y2 for x2,y2 in zip(Mean_anom,M0)]
-#            E1=[x3 + y3/(1-e*np.cos(x3)) for x3,y3 in zip(E0,calc_aux)]
-#            M1=[x4 - e*np.sin(x4) for x4 in E0]
-#            i+=1
-#            E0=E1
-#            M0=M1
-#        nu=[2*np.arctan(np.sqrt((1+e)/(1-e))*np.tan(x5/2)) for x5 in E0]
-#        RV=[Krv*(e*np.cos(w)+np.cos(w+x6)) for x6 in nu]
-#
-#        K = self.compute_matrix(a)
-#        length = int((y.size )/3)                #divide by the number of equations
-#        y[0:length] = y[0:length] - np.array(RV) #to include the keplerian function data
-#        try:
-#            L1 = cho_factor(K, overwrite_a=True, lower=False)
-#            log_like = - 0.5*np.dot(y.T, cho_solve(L1, y)) - np.sum(np.log(np.diag(L1[0]))) - 0.5*y.size*np.log(2*np.pi)
-#        except LinAlgError:
-#            return -np.inf
-#        return log_like
-#
-#
-#    def minus_kepler_likelihood(self, a, b, y, nugget = True):
-#        """ Equal to -kepler_likelihood(self, a, y, nugget = True) """
-#        return - self.kepler_likelihood(a, b, y, nugget = True)
-
-
     def sample(self, a):
         mean = np.zeros_like(self.tt)
         cov = self.compute_matrix(a)
@@ -298,6 +243,16 @@ class BIGgp(object):
 
         norm = multivariate_normal(np.zeros_like(t), cov)
         return norm.rvs()
+
+
+#Auxiliary functions
+def scale(x, xerr):
+    """ 
+    to x: subtract mean, divide by std 
+    to xerr: divide by std of x
+    """
+    m, s = x.mean(), x.std()
+    return (x-m)/s, xerr/s
 
 
 def isposdef(A, tol=1e-12):
