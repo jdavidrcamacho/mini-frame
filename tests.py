@@ -16,17 +16,15 @@ from scipy.stats import multivariate_normal
 from scipy.optimize import minimize
 
 ### a = [l, vc, vr, lc, bc, br] -> kernel parameters
-b = np.exp(1)
-c = np.exp(10)
+
 d = np.array([ np.random.uniform(np.exp(-100), 1),
                   np.random.uniform(np.exp(-100), 100), 
                   np.random.uniform(np.exp(-100), 100), 
                   np.random.uniform(np.exp(-100), 100), 
                   np.random.uniform(np.exp(-100), 100), 
                   np.random.uniform(np.exp(-100), 100) ])
-
-#a = np.array([1, 1, 10, -1, 10, 1000])
 a = d
+b = [10,0.5,15,80,0, 2, 1,2] 
 
 ### Example for the squared exponential  #######################################
 ### 1st set pf data - original data
@@ -34,19 +32,28 @@ t,rv, rvyerr, bis, rhk,sig_rhk = np.loadtxt("HD41248_harps.rdb",skiprows=2,unpac
 #t = np.linspace(1, 300, 228)
 bis_err=2*rvyerr
 
-gpObj = BIGgp(kernels.SquaredExponential,[Keplerian(10,0.5,15,80,0),Constant(10), None] , t=t, rv=rv, rverr=rvyerr,
+gpObj = BIGgp(kernels.SquaredExponential,[Keplerian,Constant, Linear] , t=t, rv=rv, rverr=rvyerr,
                     bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
-matriz = gpObj.compute_matrix(a)
-print(isposdef(matriz))
 
-#measurements
 y=np.hstack((rv,rhk,bis))
-#error in measurements
 yerr=np.hstack((rvyerr,sig_rhk,2*rvyerr))
+
 # #log-likelihood
-print('1st try ->', gpObj.log_likelihood(a, y))
+print('with mean functions', gpObj.log_likelihood(a,b, y))
 print()
 
+gpObj = BIGgp(kernels.SquaredExponential,[None,None, None] , t=t, rv=rv, rverr=rvyerr,
+                    bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
+
+y=np.hstack((rv,rhk,bis))
+yerr=np.hstack((rvyerr,sig_rhk,2*rvyerr))
+
+# #log-likelihood
+print('no mean function', gpObj.log_likelihood(a, b, y))
+print()
+
+
+matriz  = gpObj.compute_matrix(a)
 k11 = matriz[0:228, 0:228]
 k12 = matriz[0:228, 228:456]
 k13 = matriz[0:228, 456:684]
