@@ -34,4 +34,4 @@ install:
 
 script:
 - python -c "import miniframe"
-# - pytest $PACKAGENAME
+- pytest $PACKAGENAME
