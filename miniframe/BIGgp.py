@@ -3,14 +3,34 @@ from scipy.linalg import cho_factor, cho_solve, LinAlgError, eigh
 from scipy.stats import multivariate_normal
 import matplotlib.pyplot as plt 
 
-from miniframe.kernels import SquaredExponential
+from copy import copy
 
+from miniframe.kernels import SquaredExponential
+from miniframe.means import *
+
+flatten = lambda l: [item for sublist in l for item in sublist]
 
 class BIGgp(object):
-    def __init__(self, kernel, MeanModel, t, rv, rverr, bis, sig_bis, rhk, sig_rhk):
+    def __init__(self, 
+                 kernel, means,
+                 t, rv, rverr, bis, sig_bis, rhk, sig_rhk):
         
         self.kernel = kernel
-        self.MeanModel = MeanModel
+
+        
+        self.means = means
+        self._mean_pars = []
+        for i, m in enumerate(self.means):
+            if m is None: 
+                continue
+            self.means[i] = m.initialize()
+            self._mean_pars.append(self.means[i].pars)
+
+        self._mean_pars = flatten(self._mean_pars)
+
+        # self._mean_pars = np.concatenate(self._mean_pars)
+
+
         self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, \
             self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
         self.t = t
@@ -22,7 +42,8 @@ class BIGgp(object):
         self.sig_rhk = sig_rhk
         self.L = 2
 
-        self.yerr = np.array([rverr, sig_bis, sig_rhk])
+        self.y = np.concatenate([rv, bis, rhk])
+        self.yerr = np.concatenate([rverr, sig_bis, sig_rhk])
         self.tt = np.tile(t, self.L+1)
         self.tplot = []
         for i in range(self.L + 1):
@@ -83,6 +104,62 @@ class BIGgp(object):
         elif self.kernel.__name__ == 'QuasiPeriodic':
             lp, le, p, vc, vr, lc, bc, br = a
             return [lp, le, p]
+
+
+    @property
+    def mean_pars_size(self):
+        return self._mean_pars_size
+
+    @mean_pars_size.getter
+    def mean_pars_size(self):
+        self._mean_pars_size = 0
+        for m in self.means:
+            if m is None: self._mean_pars_size += 0
+            else: self._mean_pars_size += m._parsize
+        return self._mean_pars_size
+
+
+    @property
+    def mean_pars(self):
+        return self._mean_pars
+
+    # @mean_pars.getter
+    # def mean_pars(self):
+    #     tmp = []
+    #     for m in self.means:
+    #         if m is None: 
+    #             continue
+    #         else: 
+    #             tmp.append(m.pars)
+    #     return np.concatenate(tmp)
+
+    @mean_pars.setter
+    def mean_pars(self, pars):
+        pars = list(pars)
+        assert len(pars) == self.mean_pars_size
+
+        self._mean_pars = copy(pars)
+
+        for i, m in enumerate(self.means):
+            if m is None: 
+                continue
+            j = 0
+            for j in range(m._parsize):
+                m.pars[j] = pars.pop(0)
+
+
+    def mean(self):
+        N = self.t.size
+        m = np.zeros_like(self.tt)
+
+        for i, meanfun in enumerate(self.means):
+            if meanfun is None:
+                continue
+            else:
+                m[i*N : (i+1)*N] = meanfun(self.t)
+
+        return m
+
 
 
     def _mean_vector(self, MeanModel, x):
@@ -191,7 +268,6 @@ class BIGgp(object):
 
     def log_likelihood(self, a, b, y, nugget = True):
         """ Calculates the marginal log likelihood. 
-        On it we consider the mean function to be zero.
 
         Parameters:
             a = array with the kernel parameters
@@ -201,33 +277,27 @@ class BIGgp(object):
         Returns:
             marginal log likelihood
         """
+        
+        # calculate covariance matrix with kernel pars a
         K = self.compute_matrix(a)
-        m = self.MeanModel
-        for i in range(3):
-            if m[i] is None:
-                y[self.t.size*i : self.t.size*(i+1)] = \
-                    y[self.t.size*i : self.t.size*(i+1)]
-            else:
-                size = m[i].__parsize__(m[i])
-                mean = m[i](b[0:size])
-                b = b[size:]
-                mean_value = self._mean_vector(mean,self.t)
-                y[self.t.size*i : self.t.size*(i+1)] = \
-                    y[self.t.size*i : self.t.size*(i+1)] - mean_value
+
+        # calculate mean and residuals with mean pars b
+        self.mean_pars = b
+        r = y - self.mean()
 
         try:
             L1 = cho_factor(K, overwrite_a=True, lower=False)
-            log_like = - 0.5*np.dot(y.T, cho_solve(L1, y)) \
+            log_like = - 0.5*np.dot(r.T, cho_solve(L1, r)) \
                        - np.sum(np.log(np.diag(L1[0]))) \
-                       - 0.5*y.size*np.log(2*np.pi)
+                       - 0.5*r.size*np.log(2*np.pi)
         except LinAlgError:
             return -np.inf
         return log_like
 
 
-    def minus_log_likelihood(self, a, y, nugget = True):
+    def minus_log_likelihood(self, a, b, y, nugget = True):
         """ Equal to -log_likelihood(self, a, y, nugget = True) """
-        return - self.log_likelihood(a, y, nugget = True)
+        return - self.log_likelihood(a, b, y, nugget = True)
 
 
     def sample(self, a):
@@ -244,6 +314,9 @@ class BIGgp(object):
         norm = multivariate_normal(np.zeros_like(t), cov)
         return norm.rvs()
 
+
+    def run_mcmc(self, iter=20, burns=10, p0=None):
+        pass
 
 #Auxiliary functions
 def scale(x, xerr):
