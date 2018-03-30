@@ -288,7 +288,8 @@ class ddQP_dt2dt1(QuasiPeriodic):
         f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f1/f3 )
         f8 = (-(4*pi*f5*f6)/(f2*f4) - f1/f3)
         f9 = ((4*pi*f5*f6)/(f2*f4) + f1/f3) 
-        return f8*f9*f7 +(1.0/f3 +4*pi*pi*f6*f6/(f2*f4*f4) -4*pi*pi*f5*f5/(f2*f4*f4))*f7 
+        return f8*f9*f7 +(1.0/f3 +4*pi*pi*f6*f6/(f2*f4*f4) \
+                                                -4*pi*pi*f5*f5/(f2*f4*f4))*f7 
 
 
 class dddQP_dt2ddt1(QuasiPeriodic):
@@ -304,18 +305,31 @@ class dddQP_dt2ddt1(QuasiPeriodic):
 
     def __call__(self, r):
         f1 = r
+        f11 = r**2
         f2 = self.ell_p**2
         f3 = self.ell_e**2
         f4 = self.period
+        f44 = self.period**2
+        f444 = self.period**3
         
         f5 = np.sin(pi*f1/f4)
+        f55 = np.sin(pi*f1/f4)**2
         f6 = np.cos(pi*f1/f4)
-        f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f1/f3 )
-        f8 = (-(4*pi*f5*f6)/(f2*f4) - f1/f3)
-        f9 = ((4*pi*f5*f6)/(f2*f4) + f1/f3) 
-        f10 = (1.0/f3 + 4*pi*pi*f6*f6/(f2*f4*f4) - 4*pi*pi*f5*f5/(f2*f4*f4))*f7
-        f11 = (-1.0/f3 - 4*pi*pi*f6*f6/(f2*f4*f4) + 4*pi*pi*f5*f5/(f2*f4*f4))*f7
-        return f11*f9*f7 +f8*f8*f9*f7 +2*f10*f8*f7 -(16*pi**3*f6*f5*f7)/(f2*f4*f4*f4)
+        f66 = np.cos(pi*f1/f4)**2     
+        f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
+        
+        j1 = -1/f3 -4*pi*pi*f66/(f2*f44) +4*pi*pi*f55/(f2*f44)
+        j2 = f1/f3 + 4*pi*f5*f5/(f2*f4)
+        
+        j3 = -j2*j2
+        j4 = j2
+
+        j5 = -j1
+        j6 = -j2        
+        
+        j8 = 16*pi*pi*pi*f6*f5*f7/(f2*f444)  
+        
+        return j1*j2*f7 + j3*j4*f7 + 2*j5*j6*f7 - j8
 
 
 class dddQP_ddt2dt1(QuasiPeriodic):
@@ -331,20 +345,33 @@ class dddQP_ddt2dt1(QuasiPeriodic):
 
     def __call__(self, r):
         f1 = r
+        f11 = r**2
         f2 = self.ell_p**2
         f3 = self.ell_e**2
         f4 = self.period
+        f44 = self.period**2
+        f444 = self.period**3
         
         f5 = np.sin(pi*f1/f4)
+        f55 = np.sin(pi*f1/f4)**2
         f6 = np.cos(pi*f1/f4)
-        f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f1/f3 )
-        f8 = (-(4*pi*f5*f6)/(f2*f4) - f1/f3)
-        f9 = ((4*pi*f5*f6)/(f2*f4) + f1/f3) 
-        f10 = (1.0/f3 + 4*pi*pi*f6*f6/(f2*f4*f4) - 4*pi*pi*f5*f5/(f2*f4*f4))*f7
-        f11 = (-1.0/f3 - 4*pi*pi*f6*f6/(f2*f4*f4) + 4*pi*pi*f5*f5/(f2*f4*f4))*f7
-        return -f11*f9*f7 -f8*f8*f9*f7 -2*f10*f8*f7 +(16*pi**3*f6*f5*f7)/(f2*f4*f4*f4)
+        f66 = np.cos(pi*f1/f4)**2     
+        f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
+        
+        j1 = -1/f3 -4*pi*pi*f66/(f2*f44) +4*pi*pi*f55/(f2*f44)
+        j2 = f1/f3 + 4*pi*f5*f5/(f2*f4)
+        
+        j3 = -j2*j2
+        j4 = j2
 
-
+        j5 = -j1
+        j6 = -j2        
+        
+        j8 = 16*pi*pi*pi*f6*f5*f7/(f2*f444)  
+        
+        return -j1*j2*f7 - j3*j4*f7 - 2*j5*j6*f7 + j8
+        
+        
 class ddddQP_ddt2ddt1(QuasiPeriodic):
     """
     Second derivative of the QuasiPeriodic kernel with respect to t1t1 and t2t2.
@@ -383,7 +410,8 @@ class ddddQP_ddt2ddt1(QuasiPeriodic):
         j9 = j3**2
         j10 = j2**2
         j11 = j1**2
-        return (4*j1*j2*j3 -j4 +j5 -j6 +j7 +j8*j9 +j10*j9 +j8*j10 +j8 +2*j11)*f7
+        return (4*j1*j2*j3 -j4 +j5 -j6 +j7 +j8*j9 \
+                                                +j10*j9 +j8*j10 +j8 +2*j11)*f7
 
 
 
