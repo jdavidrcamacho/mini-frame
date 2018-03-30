@@ -402,16 +402,17 @@ class ddddQP_ddt2ddt1(QuasiPeriodic):
         j1 = 1./f3 + 4*pi*pi*f66/(f2*f44) - 4*pi*pi*f55/(f2*f44)
         j2 = -f1/f3 - 4*pi*f6*f5/(f2*f4)
         j3 = f1/f3 + 4*pi*f6*f5/(f2*f4)
-        j4 = 32*pi*pi*f6*f5*j3/(f2*f444)
-        j5 = 32*pi*pi*f6*f5*j2/(f2*f444)
+        j4 = 32*pi*pi*pi*f6*f5*j3/(f2*f444)        
+        j5 = 32*pi*pi*pi*f6*f5*j2/(f2*f444)
         j6 = 16*pi*pi*pi*pi*f55/(f2*f4444)
         j7 = 16*pi*pi*pi*pi*f66/(f2*f4444)
+
         j8 = -1./f3 - 4*pi*pi*f66/(f2*f44) + 4*pi*pi*f55/(f2*f44)
         j9 = j3**2
         j10 = j2**2
         j11 = j1**2
         return (4*j1*j2*j3 -j4 +j5 -j6 +j7 +j8*j9 \
-                                                +j10*j9 +j8*j10 +j8 +2*j11)*f7
+                                                +j10*j9 +j8*j10 +j8 +2*j11) *f7
 
 
 
