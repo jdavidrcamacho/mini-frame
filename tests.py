@@ -15,201 +15,155 @@ from scipy import stats
 from scipy.stats import multivariate_normal
 from scipy.optimize import minimize
 
-### a = [l, vc, vr, lc, bc, br] -> kernel parameters
-
-d = np.array([ np.random.uniform(np.exp(-100), 1),
-                  np.random.uniform(np.exp(-100), 100), 
-                  np.random.uniform(np.exp(-100), 100), 
-                  np.random.uniform(np.exp(-100), 100), 
-                  np.random.uniform(np.exp(-100), 100), 
-                  np.random.uniform(np.exp(-100), 100) ])
-a = d
-b = [10, 15, 0.5, 80, 0, 2, 1, 2] 
+#setting things to True or False (Run or not)
+LIKELIHOOD = True
+MATRICES = True
+MCMC_RUN = True
 
 ### Example for the squared exponential  #######################################
-### 1st set pf data - original data
-t,rv, rvyerr, bis, rhk,sig_rhk = np.loadtxt("HD41248_harps.rdb",skiprows=2,unpack=True, usecols=(0,1,2,5,9,10))
-#t = np.linspace(1, 300, 228)
-bis_err=2*rvyerr
+# a = [l, vc, vr, lc, bc, br] -> kernel parameters
+a = np.array([ np.random.uniform(np.exp(-10), 1),
+                  np.random.uniform(np.exp(-10), 100), 
+                  np.random.uniform(np.exp(-10), 100), 
+                  np.random.uniform(np.exp(-10), 100), 
+                  np.random.uniform(np.exp(-10), 100), 
+                  np.random.uniform(np.exp(-10), 100) ])
+# B = [ ... ] -> mean funtions parameters
+b = [10,15,0.5,80,0, 2, 1,2]
 
-gpObj = BIGgp(kernels.SquaredExponential,[Keplerian, Constant, Linear] , t=t, rv=rv, rverr=rvyerr,
-                    bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
 
-y=np.hstack((rv,rhk,bis))
-yerr=np.hstack((rvyerr,sig_rhk,2*rvyerr))
+#data
+t,rv, rvyerr, bis, rhk,sig_rhk = np.loadtxt("miniframe/datasets/HD41248_harps.rdb",skiprows=2,unpack=True, usecols=(0,1,2,5,9,10))
+bis_err = 2*rvyerr
+y = np.hstack((rv,rhk,bis))
+yerr = np.hstack((rvyerr,sig_rhk,2*rvyerr))
 
-# #log-likelihood
-print('with mean functions', gpObj.log_likelihood(a,b, y))
-print()
 
-gpObj = BIGgp(kernels.SquaredExponential,[None,None, None] , t=t, rv=rv, rverr=rvyerr,
-                    bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
+if LIKELIHOOD:
+    #GP object
+    gpObj = BIGgp(kernels.SquaredExponential,[None,None, None] , t=t,
+                  rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
+    print('Likelihood with no mean function =', gpObj.log_likelihood(a, [], y))
+    print()
+    
+    #GP object
+    gpObj = BIGgp(kernels.SquaredExponential, [Keplerian, Constant, Linear], t=t,
+                  rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
+    print('Likelihood with mean functions =', gpObj.log_likelihood(a, b, y))
+    print()
 
-y=np.hstack((rv,rhk,bis))
-yerr=np.hstack((rvyerr,sig_rhk,2*rvyerr))
 
-# #log-likelihood
-print('no mean function', gpObj.log_likelihood(a, [], y))
-print()
 
-sys.exit(0)
+#To check the created matrices
+if MATRICES:
+    main_matrix  = gpObj.compute_matrix(a)
+    k11 = main_matrix[0:228, 0:228]
+    k12 = main_matrix[0:228, 228:456]
+    k13 = main_matrix[0:228, 456:684]
+    k23 = main_matrix[228:456, 456:684]
+    k22 = main_matrix[228:456, 228:456]
+    k33 = main_matrix[456:684, 456:684]
+    
+    k21 = main_matrix[228:456, 0:228]     #equal to k12.T
+    k31 = main_matrix[456:684, 0:228]     #equal to k13.T
+    k32 = main_matrix[456:684, 228:456]   #equal to k23.T
 
-matriz  = gpObj.compute_matrix(a)
-k11 = matriz[0:228, 0:228]
-k12 = matriz[0:228, 228:456]
-k13 = matriz[0:228, 456:684]
-k23 = matriz[228:456, 456:684]
-k22 = matriz[228:456, 228:456]
-k33 = matriz[456:684, 456:684]
 
-k21 = matriz[228:456, 0:228]     #equal to k12.T
-k31 = matriz[456:684, 0:228]     #equal to k13.T
-k32 = matriz[456:684, 228:456]   #equal to k23.T
-
-kernel = False #just in case I don't want things to run
-#### simple sample and marginalization with emcee
-runs, burns = 100, 100
-if kernel:
+#To run a mcmc
+if MCMC_RUN:
+    #### simple sample and marginalization with emcee
+    runs, burns = 100, 100
     #probabilistic model
     def logprob(p):
-        if any([p[0] < -100, p[0] > np.log(5),
-                p[1] < -100, p[1] > np.log(30),
-                p[2] < -100, p[2] > np.log(25),
-                p[3] < -100, p[3] > np.log(25),
-                p[4] < -100, p[4] > np.log(50),
-                p[5] < -100, p[5] > np.log(25)]):
+        if any([p[0] < -10, p[0] > np.log(2), 
+                p[1] < -10, p[1] > np.log(30),
+                p[2] < -10, p[2] > np.log(30),
+                p[3] < -10, p[3] > np.log(30),
+                p[7] < -10, p[4] > np.log(30),
+                p[5] < -10, p[5] > np.log(30),
+                p[6] < -10, p[6] > np.log(50),
+                p[7] < -10, p[7] > np.log(100),
+                p[8] < -10, p[8] > np.log(1),
+                p[9] < -10, p[9] > np.log(2*np.pi),
+                p[10] < -10, p[10] > 10,
+                p[11] < -10, p[11] > 10,
+                p[12] < -10, p[12] > 10,
+                p[13] < -10, p[13] > 10]):
             return -np.inf
         logprior = 0.0
-        return logprior + gpObj.log_likelihood(p, y)
+        return logprior + gpObj.log_likelihood(np.exp(p[:-8]), np.exp(p[-8:]), y)
 
-    l_prior = stats.uniform(np.exp(-100), 5 -np.exp(-100))                    #[exp(-100) to 5]
-    vc_prior = stats.uniform(np.exp(-100), 30 -np.exp(-100))                    #[exp(-100) to 30]
-    vr_prior = stats.uniform(np.exp(-100), 25 -np.exp(-100))                    #[exp(-100) to 25]
-    lc_prior = stats.uniform(np.exp(-100), 25 -np.exp(-100))                    #[exp(-100) to 25]
-    bc_prior = stats.uniform(np.exp(-100), 50 -np.exp(-100))                    #[exp(-100) to 50]
-    br_prior = stats.uniform(np.exp(-100), 25 -np.exp(-100))                     #[exp(-100) to 25]
+
+    prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10))     #prior from exp(-10) to exp(10)
+
+    l_prior = stats.uniform(np.exp(-10), 2 -np.exp(-10))  #[exp(-10) to 2]
+    vc_prior = stats.uniform(np.exp(-10), 30 -np.exp(-100)) #[exp(-10) to 30]
+    vr_prior = stats.uniform(np.exp(-10), 30 -np.exp(-100)) #[exp(-10) to 30]
+    lc_prior = stats.uniform(np.exp(-10), 30 -np.exp(-100)) #[exp(-10) to 30]
+    bc_prior = stats.uniform(np.exp(-10), 30 -np.exp(-100)) #[exp(-10) to 30]
+    br_prior = stats.uniform(np.exp(-10), 30 -np.exp(-100)) #[exp(-10) to 30]
+    P_prior = stats.uniform(np.exp(-10), 50 -np.exp(-10)) #[exp(-10) to 50]
+    k_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #[exp(-10) to 100]
+    e_prior = stats.uniform(np.exp(-10), 1-np.exp(-10)) #[exp(-10) to 1]
+    w_prior = stats.uniform(np.exp(-10), 2*np.pi -np.exp(-10)) #[exp(-10) to 2*pi]
+    t0_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #prior
+    const_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #prior
+    slope_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #prior
+    inter_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #prior
 
     def from_prior():
-        return np.array([l_prior.rvs(),vc_prior.rvs(),
-                         vr_prior.rvs(),lc_prior.rvs(),bc_prior.rvs(),br_prior.rvs() ])
+        #[l, vc,vr,lc,bc,br, p,k,e,w,t0, const, slope,intersect]
+        return np.array([ l_prior.rvs(),
+                         vc_prior.rvs(), vr_prior.rvs(), lc_prior.rvs(), bc_prior.rvs(), br_prior.rvs(),
+                         P_prior.rvs(), k_prior.rvs(), e_prior.rvs(), w_prior.rvs(), t0_prior.rvs(), 
+                         const_prior.rvs(), slope_prior.rvs(), inter_prior.rvs() ])
 
     #Set up the sampler.
-    nwalkers, ndim = 2*len(a), len(a)
+    nwalkers, ndim = 2*14, 14
     sampler = emcee.EnsembleSampler(nwalkers, ndim, logprob)
     #Initialize the walkers.
     p0=[np.log(from_prior()) for i in range(nwalkers)]
-#    assert not np.isinf(map(logprob, p0)).any()
-#    assert not np.isnan(map(logprob, p0)).any()
 
     print("Running burn-in")
     p0, _, _ = sampler.run_mcmc(p0, burns)
     print("Running production chain")
     sampler.run_mcmc(p0, runs);
     burns=0
-    #Chains graphics
-    print('graphics')
-    fig, axes = pl.subplots(6, 1, sharex=True, figsize=(8, 9))
-    axes[0].plot(np.exp(sampler.chain[:, burns:, 0]).T, color="k", alpha=0.4)
-    axes[0].yaxis.set_major_locator(MaxNLocator(5))
-    axes[0].set_ylabel("$kernel length scale$")
-    axes[1].plot(np.exp(sampler.chain[:, burns:, 1]).T, color="k", alpha=0.4) #log
-    axes[1].yaxis.set_major_locator(MaxNLocator(5))
-    axes[1].set_ylabel("$Vc$")
-    axes[2].plot(np.exp(sampler.chain[:, burns:, 2]).T, color="k", alpha=0.4) #log
-    axes[2].yaxis.set_major_locator(MaxNLocator(5))
-    axes[2].set_ylabel("$Vr$")
-    axes[3].plot(np.exp(sampler.chain[:, burns:, 3]).T, color="k", alpha=0.4) #log 
-    axes[3].yaxis.set_major_locator(MaxNLocator(5))
-    axes[3].set_ylabel("$Lc$")
-    axes[4].plot(np.exp(sampler.chain[:, burns:, 4]).T, color="k", alpha=0.4) #log
-    axes[4].yaxis.set_major_locator(MaxNLocator(5))
-    axes[4].set_ylabel("$Bc$")
-    axes[5].plot(np.exp(sampler.chain[:, burns:, 5]).T, color="k", alpha=0.4) #log
-    axes[5].yaxis.set_major_locator(MaxNLocator(5))
-    axes[5].set_ylabel("$Br$")
-    axes[5].set_xlabel("step number")
-    fig.tight_layout(h_pad=0.0)
-    pl.show()
 
     #Compute the quantiles
     burnin = burns
     samples = sampler.chain[:, burnin:, :].reshape((-1, ndim))
-    samples[:, 0] = np.exp(samples[:, 0])   #Kernel length scale
-    samples[:, 1] = np.exp(samples[:, 1])   #Vc
-    samples[:, 2] = np.exp(samples[:, 2])   #Vr
-    samples[:, 3] = np.exp(samples[:, 3])   #Lc
-    samples[:, 4] = np.exp(samples[:, 4])   #Bc
-    samples[:, 5] = np.exp(samples[:, 5])   #Br
-    l_mcmc,vc_mcmc,vr_mcmc,lc_mcmc,bc_mcmc,br_mcmc = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
+    samples[:, 0] = np.exp(samples[:, 0])   #l
+    samples[:, 1] = np.exp(samples[:, 1])   #vc
+    samples[:, 2] = np.exp(samples[:, 2])   #vr
+    samples[:, 3] = np.exp(samples[:, 3])   #lc
+    samples[:, 4] = np.exp(samples[:, 4])   #bc
+    samples[:, 5] = np.exp(samples[:, 5])   #br
+    samples[:, 6] = np.exp(samples[:, 6])   #P
+    samples[:, 7] = np.exp(samples[:, 7])   #Krv
+    samples[:, 8] = np.exp(samples[:, 8])   #e
+    samples[:, 9] = np.exp(samples[:, 9])   #w
+    samples[:, 10] = np.exp(samples[:, 10])   #t0
+    samples[:, 11] = np.exp(samples[:, 11])   #constant
+    samples[:, 12] = np.exp(samples[:, 12])   #Linear slope
+    samples[:, 13] = np.exp(samples[:, 13])   #Liner intersect
+
+    ll,vcvc, vrvr, lclc, bcbc,brbr, PP, ee, kk, ww, tt00, const, l1, l2 = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                                  zip(*np.percentile(samples, [16, 50, 84],axis=0)))
 
-    print('kernel length scale = {0[0]} +{0[1]} -{0[2]}'.format(l_mcmc))
-    print('Vc = {0[0]} +{0[1]} -{0[2]}'.format(vc_mcmc))
-    print('Vr = {0[0]} +{0[1]} -{0[2]}'.format(vr_mcmc))
-    print('Lc = {0[0]} +{0[1]} -{0[2]}'.format(lc_mcmc))
-    print('Bc = {0[0]} +{0[1]} -{0[2]}'.format(bc_mcmc))
-    print('Br = {0[0]} +{0[1]} -{0[2]}'.format(br_mcmc))
-
-sys.exit(0)
-
-################################################################################
-### 2nd set of data - evenly spaced time
-t,rv, rvyerr, bis, rhk,sig_rhk = np.loadtxt("HD41248_harps.rdb",skiprows=2,unpack=True, usecols=(0,1,2,5,9,10))
-bis_err=2*rvyerr
-t = np.linspace(100, 500, 228)
-
-gpObj = BIGgp(kernels.SquaredExponential, t=t, rv=rv, rverr=rvyerr,
-                    bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
-matriz = gpObj.compute_matrix(a)
-print(isposdef(matriz))
-
-#measurements
-y=np.hstack((rv,rhk,bis))
-#error in measurements
-yerr=np.hstack((rvyerr,sig_rhk,2*rvyerr))
-# #log-likelihood
-print('2nd try ->', gpObj.log_likelihood(a, y))
-print()
-################################################################################
-### one of rajpaul's dataset from jones et al. 2017
-### a = [l, vc, vr, lc, bc, br] -> kernel parameters
-a = np.array([1, 1, 1, 1, 1, 1])
-
-t, rv, rhk, bis, rvyerr, sig_rhk,bis_err  = np.loadtxt("rajpaul_hd_fine_datasets.csv",delimiter=',',skiprows=1,unpack=True)
-gpObj = BIGgp(kernels.SquaredExponential, t=t, rv=rv, rverr=rvyerr,
-                    bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
-matriz = gpObj.compute_matrix(a)
-print(isposdef(matriz))
-
-#measurements
-y=np.hstack((rv,rhk,bis))
-#error in measurements
-yerr=np.hstack((rvyerr,sig_rhk,2*rvyerr))
-# #log-likelihood
-print('3rd try ->', gpObj.log_likelihood(a, y))
-print()
-################################################################################
-### if this works -.-
-t,rv, rvyerr, bis, rhk,sig_rhk = np.loadtxt("HD41248_harps.rdb",skiprows=2,unpack=True, usecols=(0,1,2,5,9,10))
-
-whynot = np.random.choice(228, 228, replace=False)
-t1 = t[whynot]
-bis1= bis[whynot]
-rv1 = rv[whynot]
-rhk1 = rhk[whynot]
-rvyerr1 = rvyerr[whynot]
-sig_rhk1 = sig_rhk[whynot]
-bis_err1 = 2*rvyerr1
-
-gpObj = BIGgp(kernels.SquaredExponential, t=t1, rv=rv1, rverr=rvyerr1,
-                    bis=bis1, sig_bis=bis_err1, rhk=rhk1, sig_rhk=sig_rhk1)
-matriz = gpObj.compute_matrix(a)
-print(isposdef(matriz))
-
-#measurements
-y=np.hstack((rv1,rhk1,bis1))
-#error in measurements
-yerr=np.hstack((rvyerr1,sig_rhk1,bis_err1))
-# #log-likelihood
-print('1st try again ->', gpObj.log_likelihood(a, y))
-print()
+    print('length scale = {0[0]} +{0[1]} -{0[2]}'.format(ll))
+    print('Vc = {0[0]} +{0[1]} -{0[2]}'.format(vcvc))
+    print('Vr = {0[0]} +{0[1]} -{0[2]}'.format(vrvr))
+    print('Lc = {0[0]} +{0[1]} -{0[2]}'.format(lclc))
+    print('Bc = {0[0]} +{0[1]} -{0[2]}'.format(bcbc))
+    print('Br = {0[0]} +{0[1]} -{0[2]}'.format(brbr))
+    print() 
+    print('P = {0[0]} +{0[1]} -{0[2]}'.format(PP))
+    print('K = {0[0]} +{0[1]} -{0[2]}'.format(kk))
+    print('e = {0[0]} +{0[1]} -{0[2]}'.format(ee))
+    print('w = {0[0]} +{0[1]} -{0[2]}'.format(ww))
+    print('T0 = {0[0]} +{0[1]} -{0[2]}'.format(tt00))
+    print()
+    print('constant = {0[0]} +{0[1]} -{0[2]}'.format(const))
+    print('slope = {0[0]} +{0[1]} -{0[2]}'.format(l1))
+    print('intersect = {0[0]} +{0[1]} -{0[2]}'.format(l2))
