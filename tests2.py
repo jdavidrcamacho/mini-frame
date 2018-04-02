@@ -2,7 +2,7 @@
 from miniframe import kernels
 from miniframe.BIGgp import BIGgp
 from miniframe.BIGgp import isposdef
-
+from miniframe.BIGgp import scale
 from miniframe.means import Constant, Linear, Keplerian
 
 import sys
@@ -31,15 +31,19 @@ a = np.array([ np.random.uniform(np.exp(-10), 2),
                   np.random.uniform(np.exp(-10), 30), 
                   np.random.uniform(np.exp(-10), 30) ])
 # B = [ ... ] -> mean funtions parameters
-b = [10,15,0.5,80,0, 2, 1,2]
+b = [10,15,0.5,80,0, 2, 2]
 
 
 #data
 t,rv, rvyerr, bis, rhk,sig_rhk = np.loadtxt("miniframe/datasets/HD41248_harps.rdb",skiprows=2,unpack=True, usecols=(0,1,2,5,9,10))
 bis_err = 2*rvyerr
-y = np.hstack((rv,rhk,bis))
-yerr = np.hstack((rvyerr,sig_rhk,2*rvyerr))
 
+rv, rvyerr = scale(rv, rvyerr)
+rhk, sig_rhk = scale(rhk,sig_rhk)
+bis, bis_err = scale(bis,bis_err)
+
+y = np.hstack((rv,rhk,bis))
+yerr = np.hstack((rvyerr,sig_rhk,bis_err))
 
 if LIKELIHOOD:
     #GP object
@@ -49,7 +53,7 @@ if LIKELIHOOD:
     print()
     
     #GP object
-    gpObj = BIGgp(kernels.QuasiPeriodic, [Keplerian, Constant, Linear], t=t,
+    gpObj = BIGgp(kernels.QuasiPeriodic, [Keplerian, Constant, Constant], t=t,
                   rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
     print('Likelihood with mean functions =', gpObj.log_likelihood(a, b, y))
     print()
@@ -74,7 +78,7 @@ if MATRICES:
 #To run a mcmc
 if MCMC_RUN:
     #### simple sample and marginalization with emcee
-    runs, burns = 100, 100
+    runs, burns = 1000, 1000
     #probabilistic model
     def logprob(p):
         if any([p[0] < -10, p[0] > np.log(2), 
@@ -89,13 +93,12 @@ if MCMC_RUN:
                 p[9] < -10, p[9] > np.log(100),
                 p[10] < -10, p[10] > np.log(1),
                 p[11] < -10, p[11] > np.log(2*np.pi),
-                p[12] < -10, p[12] > 10,
-                p[13] < -10, p[13] > 10,
-                p[14] < -10, p[14] > 10,
-                p[15] < -10, p[15] > 10]):
+                p[12] < np.log(1000), p[13] > np.log(10000),
+                p[13] < np.log(1000), p[13] > np.log(9000),
+                p[14] < np.log(1000), p[14] > np.log(9000)]):
             return -np.inf
         logprior = 0.0
-        return logprior + gpObj.log_likelihood(np.exp(p[:-8]), np.exp(p[-8:]), y)
+        return logprior + gpObj.log_likelihood(np.exp(p[:-7]), np.exp(p[-7:]), y)
 
 
     prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10))     #prior from exp(-10) to exp(10)
@@ -103,29 +106,32 @@ if MCMC_RUN:
     lp_prior = stats.uniform(np.exp(-10), 2 -np.exp(-10)) #[exp(-10) to 2]
     le_prior = stats.uniform(20, 60 - 20) #[exp(-10) to exp(10)]
     p_prior = stats.uniform(15, 35 - 15) #[15 to 35]
+
     vc_prior = stats.uniform(np.exp(-10), 30 -np.exp(-100)) #[exp(-10) to 30]
     vr_prior = stats.uniform(np.exp(-10), 30 -np.exp(-100)) #[exp(-10) to 30]
     lc_prior = stats.uniform(np.exp(-10), 30 -np.exp(-100)) #[exp(-10) to 30]
     bc_prior = stats.uniform(np.exp(-10), 30 -np.exp(-100)) #[exp(-10) to 30]
     br_prior = stats.uniform(np.exp(-10), 30 -np.exp(-100)) #[exp(-10) to 30]
+
     P_prior = stats.uniform(np.exp(-10), 50 -np.exp(-10)) #[exp(-10) to 50]
     k_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #[exp(-10) to 100]
     e_prior = stats.uniform(np.exp(-10), 1-np.exp(-10)) #[exp(-10) to 1]
     w_prior = stats.uniform(np.exp(-10), 2*np.pi -np.exp(-10)) #[exp(-10) to 2*pi]
-    t0_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #prior
-    const_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #prior
-    slope_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #prior
-    inter_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #prior
+    t0_prior = stats.uniform(1000, 10000 -1000) #[1000 to 10000]
+
+    const_prior = stats.uniform(1000, 9000 -1000) #[1000 to 9000]
+    const1_prior = stats.uniform(1000, 9000 -1000) #[1000 to 9000]
+
 
     def from_prior():
-        #[lp,le,p, vc,vr,lc,bc,br, P,k,e,w,t0, const, slope,intersect]
+        #[lp,le,p, vc,vr,lc,bc,br, P,k,e,w,t0, const,const]
         return np.array([ lp_prior.rvs(), le_prior.rvs(), p_prior.rvs(),
                          vc_prior.rvs(), vr_prior.rvs(), lc_prior.rvs(), bc_prior.rvs(), br_prior.rvs(),
                          P_prior.rvs(), k_prior.rvs(), e_prior.rvs(), w_prior.rvs(), t0_prior.rvs(), 
-                         const_prior.rvs(), slope_prior.rvs(), inter_prior.rvs() ])
+                         const_prior.rvs(), const1_prior.rvs() ])
 
     #Set up the sampler.
-    nwalkers, ndim = 2*16, 16
+    nwalkers, ndim = 2*15, 15
     sampler = emcee.EnsembleSampler(nwalkers, ndim, logprob)
     #Initialize the walkers.
     p0=[np.log(from_prior()) for i in range(nwalkers)]
@@ -153,10 +159,9 @@ if MCMC_RUN:
     samples[:, 11] = np.exp(samples[:, 11])   #w
     samples[:, 12] = np.exp(samples[:, 12])   #t0
     samples[:, 13] = np.exp(samples[:, 13])   #constant
-    samples[:, 14] = np.exp(samples[:, 14])   #Linear slope
-    samples[:, 15] = np.exp(samples[:, 15])   #Liner intersect
+    samples[:, 14] = np.exp(samples[:, 14])   #constant
 
-    ll1, ll2, pp,vcvc, vrvr, lclc, bcbc,brbr, PP, ee, kk, ww, tt00, const, l1, l2 = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
+    ll1, ll2, pp,vcvc, vrvr, lclc, bcbc,brbr, PP, ee, kk, ww, tt00, const, l1 = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                                  zip(*np.percentile(samples, [16, 50, 84],axis=0)))
 
     print('periodic length scale = {0[0]} +{0[1]} -{0[2]}'.format(ll1))
@@ -175,5 +180,4 @@ if MCMC_RUN:
     print('T0 = {0[0]} +{0[1]} -{0[2]}'.format(tt00))
     print()
     print('constant = {0[0]} +{0[1]} -{0[2]}'.format(const))
-    print('slope = {0[0]} +{0[1]} -{0[2]}'.format(l1))
-    print('intersect = {0[0]} +{0[1]} -{0[2]}'.format(l2))
+    print('constant = {0[0]} +{0[1]} -{0[2]}'.format(l1))

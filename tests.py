@@ -2,7 +2,7 @@
 from miniframe import kernels
 from miniframe.BIGgp import BIGgp
 from miniframe.BIGgp import isposdef
-
+from miniframe.BIGgp import scale
 from miniframe.means import Constant, Linear, Keplerian
 
 import sys
@@ -35,8 +35,13 @@ b = [10,15,0.5,80,0, 2, 1,2]
 #data
 t,rv, rvyerr, bis, rhk,sig_rhk = np.loadtxt("miniframe/datasets/HD41248_harps.rdb",skiprows=2,unpack=True, usecols=(0,1,2,5,9,10))
 bis_err = 2*rvyerr
+
+rv, rvyerr = scale(rv, rvyerr)
+rhk, sig_rhk = scale(rhk,sig_rhk)
+bis, bis_err = scale(bis,bis_err)
+
 y = np.hstack((rv,rhk,bis))
-yerr = np.hstack((rvyerr,sig_rhk,2*rvyerr))
+yerr = np.hstack((rvyerr,sig_rhk,bis_err))
 
 
 if LIKELIHOOD:
