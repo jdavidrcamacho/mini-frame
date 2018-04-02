@@ -1,8 +1,10 @@
 import numpy as np
-from scipy.linalg import cho_factor, cho_solve, LinAlgError, eigh
-from scipy.stats import multivariate_normal
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
+import emcee
 
+from scipy.linalg import cho_factor, cho_solve, LinAlgError, eigh
+from scipy import stats
+from scipy.stats import multivariate_normal
 from copy import copy
 
 from miniframe.kernels import SquaredExponential
@@ -11,13 +13,11 @@ from miniframe.means import *
 flatten = lambda l: [item for sublist in l for item in sublist]
 
 class BIGgp(object):
+    """ Big initial class to create our Gaussian process """
     def __init__(self, 
-                 kernel, means,
-                 t, rv, rverr, bis, sig_bis, rhk, sig_rhk):
-        
+                 kernel, means, t, rv, rverr, bis, sig_bis, rhk, sig_rhk):
         self.kernel = kernel
 
-        
         self.means = means
         self._mean_pars = []
         for i, m in enumerate(self.means):
@@ -27,9 +27,7 @@ class BIGgp(object):
             self._mean_pars.append(self.means[i].pars)
 
         self._mean_pars = flatten(self._mean_pars)
-
         # self._mean_pars = np.concatenate(self._mean_pars)
-
 
         self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, \
             self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
@@ -72,7 +70,6 @@ class BIGgp(object):
         # t -= t[0]
         # t /= t.ptp()
         t = np.linspace(0, 1, t.size)
-
         biserr = 2*rverr # need to do this before changing rverr
 
         print ('removing mean from RVs: %f' % rv.mean())
@@ -87,7 +84,6 @@ class BIGgp(object):
         print ('dividing logRhk by std: %f' % rhk.std())
         rhk, sig_rhk = scale(rhk, sig_rhk)
         return cls(kernel, t, rv, rverr, bis, sig_bis, rhk, sig_rhk)
-
 
 
     def _kernel_matrix(self, kernel, x):
@@ -110,6 +106,7 @@ class BIGgp(object):
     def mean_pars_size(self):
         return self._mean_pars_size
 
+
     @mean_pars_size.getter
     def mean_pars_size(self):
         self._mean_pars_size = 0
@@ -123,6 +120,7 @@ class BIGgp(object):
     def mean_pars(self):
         return self._mean_pars
 
+
     # @mean_pars.getter
     # def mean_pars(self):
     #     tmp = []
@@ -133,13 +131,12 @@ class BIGgp(object):
     #             tmp.append(m.pars)
     #     return np.concatenate(tmp)
 
+
     @mean_pars.setter
     def mean_pars(self, pars):
         pars = list(pars)
         assert len(pars) == self.mean_pars_size
-
         self._mean_pars = copy(pars)
-
         for i, m in enumerate(self.means):
             if m is None: 
                 continue
@@ -151,15 +148,12 @@ class BIGgp(object):
     def mean(self):
         N = self.t.size
         m = np.zeros_like(self.tt)
-
         for i, meanfun in enumerate(self.means):
             if meanfun is None:
                 continue
             else:
                 m[i*N : (i+1)*N] = meanfun(self.t)
-
         return m
-
 
 
     def _mean_vector(self, MeanModel, x):
@@ -213,6 +207,7 @@ class BIGgp(object):
         gammagdg = self._kernel_matrix(self.dKdt1(*kpars), x)
         return vc*lc * gammagg + vr*lc * gammagdg
 
+
     def k13(self, a, x):
         """ Equation 22 """
         kpars = self._kernel_pars(a)
@@ -238,7 +233,6 @@ class BIGgp(object):
     def compute_matrix(self, a, yerr=True, nugget=False):
         """ Creates the big covariance matrix, equations 24 in the paper """ 
         print ('Vc:%.2f  Vr:%.2f  Lc:%.2f  Bc:%.2f  Br:%.2f' % tuple(self._scaling_pars(a)))
-
         if yerr:
             diag1 = self.rverr**2 * np.identity(self.t.size)
             diag2 = self.sig_rhk**2 * np.identity(self.t.size)
@@ -262,26 +256,21 @@ class BIGgp(object):
             #To give more "weight" to the diagonal
             nugget_value = 0.01
             K = (1 - nugget_value)*K + nugget_value*np.diag(np.diag(K))
-
         return K
 
 
     def log_likelihood(self, a, b, y, nugget = True):
         """ Calculates the marginal log likelihood. 
-
         Parameters:
             a = array with the kernel parameters
             b = array with the mean functions parameters
             y = values of the dependent variable (the measurements)
-
         Returns:
             marginal log likelihood
         """
-        
-        # calculate covariance matrix with kernel pars a
+        #calculate covariance matrix with kernel parameters a
         K = self.compute_matrix(a)
-
-        # calculate mean and residuals with mean pars b
+        #calculate mean and residuals with mean parameters b
         self.mean_pars = b
         r = y - self.mean()
 
@@ -310,13 +299,61 @@ class BIGgp(object):
     def sample_from_G(self, t, a):
         kpars = self._kernel_pars(a)
         cov = self._kernel_matrix(self.kernel(*kpars), t)
-
         norm = multivariate_normal(np.zeros_like(t), cov)
         return norm.rvs()
 
 
-    def run_mcmc(self, iter=20, burns=10, p0=None):
-        pass
+#    def run_mcmc(self, a=None, b=None, iter=20, burns=10):
+#        """
+#        A simple mcmc implementation using emcee
+#        Parameters:
+#            iter = number of iterarions
+#            burns = numbber of burn-ins
+#            p0 = parameters of the kernel and mean function (if exists)
+#        """
+#        if b == None:
+#            #there is nothing to run... yet
+#            pass
+#        else:
+#            #kernel parameters
+#            params_size = a.size
+#
+#            #priors settings
+#            prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10))
+#            #sampler settings
+#            nwalkers, ndim = 2*( len(a)+len(b) ), len(a)+len(b)
+#
+#            sampler = emcee.EnsembleSampler(nwalkers, ndim, logprob)
+#
+#            #initializing the walkers
+#            p0 = np.hstack((a,b))
+#            p0 = [np.log(prior.rvs()) for i in range(nwalkers)]
+#            #running burn-in
+#            p0, _, _ = sampler.run_mcmc(p0, burns)
+#            #running production chain
+#            sampler.run_mcmc(p0, iter);
+#
+#            #quantiles
+#            burnin = burns
+#            samples = np.exp( sampler.chain[:, burnin:, :].reshape((-1, ndim)) )
+#            mcmc = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
+#                        zip(*np.percentile(samples, [16, 50, 84],axis=0)))
+#            for i in range(len(mcmc)):
+#                print('var{0} = {1[0]} +{1[1]} -{1[2]}'.format(i,mcmc[i]))
+#
+#
+#def logprob(gp, p0):
+#    params_size = gp._kernel_pars,size
+#    if np.any((-10 > p0) + (p0 > 10)):
+#        return -np.inf
+#    logprior = 0.0
+#    print(p0)
+#    print('size of it', params_size)
+#    a = p0[0 : params_size]
+#    b = p0[params_size : -1]
+#    #update the kernel and compute the log likelihood
+#    return logprior + gp.log_likelihood(a, b, gp.y, nugget = True)
+
 
 #Auxiliary functions
 def scale(x, xerr):

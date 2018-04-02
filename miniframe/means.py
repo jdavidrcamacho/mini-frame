@@ -1,7 +1,6 @@
 import numpy as np
 from functools import wraps
 
-
 __all__ = ['Constant', 'Linear', 'Parabola', 'Keplerian']
 
 
@@ -22,9 +21,9 @@ def array_input(f):
 #   def __call__(self, t):
 #       # Evaluate this mean function at array of times t
 
+
 class MeanModel(object):
     _parsize = 0
-
     def __init__(self, *pars):
         self.pars = list(pars)
 
@@ -32,6 +31,7 @@ class MeanModel(object):
         """ Representation of each instance """
         return "{0}({1})".format(self.__class__.__name__,
                                  ", ".join(map(str, self.pars)))
+
     @classmethod
     def initialize(cls):
         return cls( *([0.]*cls._parsize) )
@@ -82,7 +82,6 @@ class Keplerian(MeanModel):
     tan[phi(t) / 2 ] = sqrt(1+e / 1-e) * tan[E(t) / 2] = true anomaly
     E(t) - e*sin[E(t)] = M(t) = eccentric anomaly
     M(t) = (2*pi*t/tau) + M0 = Mean anomaly
-
     P  = period in days
     e = eccentricity
     K = RV amplitude in m/s 
@@ -92,7 +91,6 @@ class Keplerian(MeanModel):
     RV = K[cos(w+v) + e*cos(w)] + sis_vel
     """
     _parsize = 5
-
     def __init__(self, P, K, e, w, T0):
         super(Keplerian, self).__init__(P, K, e, w, T0)
 
