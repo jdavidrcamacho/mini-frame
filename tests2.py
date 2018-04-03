@@ -62,7 +62,7 @@ if LIKELIHOOD:
 
 #To check the created matrices
 if MATRICES:
-    main_matrix  = gpObj.compute_matrix(a)
+    main_matrix = gpObj.compute_matrix(a)
     k11 = main_matrix[0:228, 0:228]
     k12 = main_matrix[0:228, 228:456]
     k13 = main_matrix[0:228, 456:684]
@@ -78,7 +78,7 @@ if MATRICES:
 #To run a mcmc
 if MCMC_RUN:
     #### simple sample and marginalization with emcee
-    runs, burns = 1000, 1000
+    runs, burns = 5000, 5000
     #probabilistic model
     def logprob(p):
         if any([p[0] < -10, p[0] > np.log(2), 
@@ -93,9 +93,9 @@ if MCMC_RUN:
                 p[9] < -10, p[9] > np.log(100),
                 p[10] < -10, p[10] > np.log(1),
                 p[11] < -10, p[11] > np.log(2*np.pi),
-                p[12] < np.log(1000), p[13] > np.log(10000),
-                p[13] < np.log(1000), p[13] > np.log(9000),
-                p[14] < np.log(1000), p[14] > np.log(9000)]):
+                p[12] < -10 , p[13] > np.log(10000),
+                p[13] < -10 , p[13] > np.log(10000),
+                p[14] < -10 , p[14] > np.log(10000)]):
             return -np.inf
         logprior = 0.0
         return logprior + gpObj.log_likelihood(np.exp(p[:-7]), np.exp(p[-7:]), y)
@@ -117,10 +117,10 @@ if MCMC_RUN:
     k_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #[exp(-10) to 100]
     e_prior = stats.uniform(np.exp(-10), 1-np.exp(-10)) #[exp(-10) to 1]
     w_prior = stats.uniform(np.exp(-10), 2*np.pi -np.exp(-10)) #[exp(-10) to 2*pi]
-    t0_prior = stats.uniform(1000, 10000 -1000) #[1000 to 10000]
+    t0_prior = stats.uniform(np.exp(-10), 10000 -np.exp(-10)) #[1000 to 10000]
 
-    const_prior = stats.uniform(1000, 9000 -1000) #[1000 to 9000]
-    const1_prior = stats.uniform(1000, 9000 -1000) #[1000 to 9000]
+    const_prior = stats.uniform(np.exp(-10), 10000 -np.exp(-10)) #[1000 to 9000]
+    const1_prior = stats.uniform(np.exp(-10), 10000 -np.exp(-10)) #[1000 to 9000]
 
 
     def from_prior():
@@ -161,7 +161,7 @@ if MCMC_RUN:
     samples[:, 13] = np.exp(samples[:, 13])   #constant
     samples[:, 14] = np.exp(samples[:, 14])   #constant
 
-    ll1, ll2, pp,vcvc, vrvr, lclc, bcbc,brbr, PP, ee, kk, ww, tt00, const, l1 = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
+    ll1, ll2, pp,vcvc, vrvr, lclc, bcbc,brbr, PP, kk, ee, ww, tt00, const, l1 = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                                  zip(*np.percentile(samples, [16, 50, 84],axis=0)))
 
     print('periodic length scale = {0[0]} +{0[1]} -{0[2]}'.format(ll1))
