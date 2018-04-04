@@ -1,21 +1,35 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-import matplotlib.pyplot as plt 
-from scipy.linalg import cho_factor, cho_solve, LinAlgError, eigh
+
+from scipy.linalg import cho_factor, cho_solve, LinAlgError
 from scipy.stats import multivariate_normal
 from sys import exit
+from copy import copy
 
-from miniframe.kernels import SquaredExponential
-
+flatten = lambda l: [item for sublist in l for item in sublist]
 
 class SMALLgp(object):
-    def __init__(self, kernel, number_models, time, *args):
+    def __init__(self, kernel,  means, number_models, t, *args):
         self.kernel = kernel #kernel and its derivatives
-        self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
-
-        self.time = time #time
-        self.number_models = number_models #number of models/equations
         
+        self.means = means
+        self._mean_pars = []
+        for i, m in enumerate(self.means):
+            if m is None: 
+                continue
+            self.means[i] = m.initialize()
+            self._mean_pars.append(self.means[i].pars)
+
+        self._mean_pars = flatten(self._mean_pars)
+        # self._mean_pars = np.concatenate(self._mean_pars)
+
+        self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, \
+            self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
+
+        self.t = t #t
+        self.number_models = number_models #number of models/equations
+        self.tt = np.tile(t, self.number_models)
+
         self.args = args #the data, it should be [data1, data1_err, ...]
         self.y = []
         self.yerr = []
@@ -54,6 +68,50 @@ class SMALLgp(object):
             return a[-3*self.number_models+3*(position-1) :]
         return a[-3*self.number_models+3*(position-1) : -3*self.number_models+3*position]
 
+
+    @property
+    def mean_pars_size(self):
+        return self._mean_pars_size
+
+    @mean_pars_size.getter
+    def mean_pars_size(self):
+        self._mean_pars_size = 0
+        for m in self.means:
+            if m is None: self._mean_pars_size += 0
+            else: self._mean_pars_size += m._parsize
+        return self._mean_pars_size
+
+    @property
+    def mean_pars(self):
+        return self._mean_pars
+
+    @mean_pars.setter
+    def mean_pars(self, pars):
+        pars = list(pars)
+        assert len(pars) == self.mean_pars_size
+        self._mean_pars = copy(pars)
+        for i, m in enumerate(self.means):
+            if m is None: 
+                continue
+            j = 0
+            for j in range(m._parsize):
+                m.pars[j] = pars.pop(0)
+
+
+    def mean(self):
+        N = self.t.size
+        m = np.zeros_like(self.tt)
+        for i, meanfun in enumerate(self.means):
+            if meanfun is None:
+                continue
+            else:
+                m[i*N : (i+1)*N] = meanfun(self.t)
+        return m
+
+
+    def _mean_vector(self, MeanModel, x):
+        """ returns the value of the mean function """
+        return MeanModel(self.t)
 
     def kii(self, a, x, position):
         """ Creates the diagonal matrices used to form the final matrix """
@@ -107,9 +165,9 @@ class SMALLgp(object):
         if yerr:
             diag = self.yerr
         else:
-            diag = 1e-12 * np.identity(self.time.size)
+            diag = 1e-12 * np.identity(self.t.size)
 
-        K_size = self.time.size*self.number_models  #size of the matrix
+        K_size = self.t.size*self.number_models  #size of the matrix
         K_start = np.zeros((K_size, K_size))        #initial "empty" matrix
         if self.number_models == 1:
             K = self.kii(a, self.t, position = 1) + diag
@@ -118,13 +176,13 @@ class SMALLgp(object):
             while j <= self.number_models:
                 for i in range(1, self.number_models+1):
                     if i == j:
-                        k = self.kii(a, self.time, position = i)
-                        K_start[(i-1)*self.time.size : i*self.time.size, (j-1)*self.time.size : j*self.time.size] = k
+                        k = self.kii(a, self.t, position = i)
+                        K_start[(i-1)*self.t.size : i*self.t.size, (j-1)*self.t.size : j*self.t.size] = k
                         
                     else:
-                        k = self.kij(a, self.time, position1 = i, position2 = j)
-                        K_start[(i-1)*self.time.size : i*self.time.size, (j-1)*self.time.size : j*self.time.size] = k
-                        K_start[(j-1)*self.time.size : j*self.time.size, (i-1)*self.time.size : i*self.time.size] = k.T
+                        k = self.kij(a, self.t, position1 = i, position2 = j)
+                        K_start[(i-1)*self.t.size : i*self.t.size, (j-1)*self.t.size : j*self.t.size] = k
+                        K_start[(j-1)*self.t.size : j*self.t.size, (i-1)*self.t.size : i*self.t.size] = k.T
                 j += 1
         K = K_start + np.diag(diag)
 
@@ -135,7 +193,7 @@ class SMALLgp(object):
         return K
 
 
-    def log_likelihood(self, a, nugget = True):
+    def log_likelihood(self, a, b, nugget = True):
         """ Calculates the marginal log likelihood. 
         On it we consider the mean function to be zero.
 
@@ -146,11 +204,16 @@ class SMALLgp(object):
         Returns:
             marginal log likelihood
         """
+        #calculate covariance matrix with kernel parameters a
         K = self.compute_matrix(a)
+        #calculate mean and residuals with mean parameters b
         yy = np.concatenate(self.y)
-        print(type(yy))
+        self.mean_pars = b
+        yy = yy - self.mean()
+
         try:
             L1 = cho_factor(K, overwrite_a=True, lower=False)
+            print(- 0.5*np.dot(yy.T, cho_solve(L1, yy)), - np.sum(np.log(np.diag(L1[0]))), - 0.5*yy.size*np.log(2*np.pi))
             log_like = - 0.5*np.dot(yy.T, cho_solve(L1, yy)) \
                        - np.sum(np.log(np.diag(L1[0]))) \
                        - 0.5*yy.size*np.log(2*np.pi)
@@ -159,9 +222,9 @@ class SMALLgp(object):
         return log_like
 
 
-    def minus_log_likelihood(self, a, y, nugget = True):
-        """ Equal to -log_likelihood(self, a, y, nugget = True) """
-        return - self.log_likelihood(a, y, nugget = True)
+    def minus_log_likelihood(self, a, b, nugget = True):
+        """ Equal to -log_likelihood(self, a, b, nugget = True) """
+        return - self.log_likelihood(a, b, nugget = True)
 
 
     def check_symmetry(self, a, tol=1e-10):
