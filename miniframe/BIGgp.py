@@ -259,7 +259,7 @@ class BIGgp(object):
         return K
 
 
-    def log_likelihood(self, a, b, y, nugget = True):
+    def log_likelihood(self, a, b, nugget = True):
         """ Calculates the marginal log likelihood. 
         Parameters:
             a = array with the kernel parameters
@@ -272,7 +272,7 @@ class BIGgp(object):
         K = self.compute_matrix(a)
         #calculate mean and residuals with mean parameters b
         self.mean_pars = b
-        r = y - self.mean()
+        r = self.y - self.mean()
 
         try:
             L1 = cho_factor(K, overwrite_a=True, lower=False)
@@ -284,9 +284,9 @@ class BIGgp(object):
         return log_like
 
 
-    def minus_log_likelihood(self, a, b, y, nugget = True):
+    def minus_log_likelihood(self, a, b, nugget = True):
         """ Equal to -log_likelihood(self, a, y, nugget = True) """
-        return - self.log_likelihood(a, b, y, nugget = True)
+        return - self.log_likelihood(a, b, nugget = True)
 
 
     def sample(self, a):
