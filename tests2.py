@@ -49,13 +49,13 @@ if LIKELIHOOD:
     #GP object
     gpObj = BIGgp(kernels.QuasiPeriodic,[None,None, None] , t=t,
                   rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
-    print('Likelihood with no mean function =', gpObj.log_likelihood(a, [], y))
+    print('Likelihood with no mean function =', gpObj.log_likelihood(a, []))
     print()
     
     #GP object
     gpObj = BIGgp(kernels.QuasiPeriodic, [Keplerian, Constant, Constant], t=t,
                   rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
-    print('Likelihood with mean functions =', gpObj.log_likelihood(a, b, y))
+    print('Likelihood with mean functions =', gpObj.log_likelihood(a, b))
     print()
 
 
