@@ -16,7 +16,7 @@ from scipy import stats
 
 start_time = time()
 
-flux, rv, bis = np.loadtxt("miniframe/datasets/1spot_dataset.rdb",skiprows=2,unpack=True, usecols=(1, 2, 3))
+flux, rv, bis = np.loadtxt("miniframe/datasets/4spots_dataset.rdb",skiprows=2,unpack=True, usecols=(1, 2, 3))
 log_rhk = flux**2
 
 rv = np.tile(1000*rv, 3)
