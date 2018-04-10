@@ -1,0 +1,11 @@
+Metadata-Version: 1.0
+Name: miniframe
+Version: 0.1
+Summary: Implementation of the Gaussian process framework of Rajpaul et al. (2015)
+Home-page: https://github.com/jdavidrcamacho/mini-frame
+Author: João Camacho
+Author-email: joao.camacho@astro.up.pt
+License: MIT
+Description-Content-Type: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN

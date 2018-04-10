@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import numpy as np
 
@@ -11,7 +12,9 @@ flatten = lambda l: [item for sublist in l for item in sublist]
 class SMALLgp(object):
     def __init__(self, kernel,  means, number_models, t, *args):
         self.kernel = kernel #kernel and its derivatives
-        
+        self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, \
+            self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
+
         self.means = means
         self._mean_pars = []
         for i, m in enumerate(self.means):
@@ -19,30 +22,24 @@ class SMALLgp(object):
                 continue
             self.means[i] = m.initialize()
             self._mean_pars.append(self.means[i].pars)
-
         self._mean_pars = flatten(self._mean_pars)
-        # self._mean_pars = np.concatenate(self._mean_pars)
 
-        self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, \
-            self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
-
-        self.t = t #t
+        self.t = t #time
         self.number_models = number_models #number of models/equations
-        self.tt = np.tile(t, self.number_models)
+        self.tt = np.tile(t, self.number_models) #"extended" time
 
-        self.args = args #the data, it should be [data1, data1_err, ...]
-        self.y = []
+        self.args = args #the data, it should be given as [data1, data1_error, ...]
+        self.y = [] 
         self.yerr = []
         for i,j  in enumerate(args):
             if i%2 == 0:
                 self.y.append(j)
             else:
                 self.yerr.append(j**2)
-
-        self.y = np.array(self.y)                    #if everything goes ok then
-        self.yerr = np.concatenate(self.yerr)        #len(y) = num_models
-        if len(self.y) != number_models:
-            exit('ERROR! Number of models and data dont match')
+        self.y = np.array(self.y)
+        self.yerr = np.concatenate(self.yerr)
+        #if everything goes ok then numbers of y lists = number of models
+        assert (i+1)/2 == number_models, 'Given data and number models dont match'
 
 
     def _kernel_matrix(self, kernel, x):
