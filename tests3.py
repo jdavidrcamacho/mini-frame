@@ -22,10 +22,9 @@ b = [10, 5]
 print(gpObj.log_likelihood(a,b))
 
 gpObj = SMALLgp.SMALLgp(kernels.SquaredExponential, [Constant, Constant, None], 3, t, rv, rvyerr, bis, bis_err, rhk, sig_rhk)
-a = np.array([1, 2,1,0.5, 1,2,3, 0,0,0])
+a = np.array([1, 2,1,0.5, 1,2,3, 1,0,0])
 b = [10, 5]
 print(gpObj.log_likelihood(a,b))
-
 
 k11 = gpObj.kii(a = a, x = t, position = 1)
 k22 = gpObj.kii(a = a, x = t, position = 2)
@@ -34,3 +33,5 @@ k12 = gpObj.kij(a = a, x = t, position1 = 1, position2 = 2)
 k13 = gpObj.kij(a = a, x = t, position1 = 1, position2 = 3)
 k23 = gpObj.kij(a = a, x = t, position1 = 2, position2 = 3)
 K = gpObj.compute_matrix(a)
+
+################################################################################
