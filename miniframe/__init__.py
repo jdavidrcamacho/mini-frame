@@ -11,4 +11,5 @@
 
 from miniframe import BIGgp
 from miniframe import SMALLgp
+from miniframe import MEDIUMgp
 from miniframe import kernels
