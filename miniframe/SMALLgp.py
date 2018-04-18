@@ -4,7 +4,6 @@ import numpy as np
 
 from scipy.linalg import cho_factor, cho_solve, LinAlgError
 from scipy.stats import multivariate_normal
-from sys import exit
 from copy import copy
 
 flatten = lambda l: [item for sublist in l for item in sublist]
@@ -55,7 +54,7 @@ class SMALLgp(object):
             l = a[0]
             return [l]
         elif self.kernel.__name__ == 'QuasiPeriodic':
-            lp, le, p = a[:2]
+            lp, le, p = a[:3]
             return [lp, le, p]
 
 
@@ -120,7 +119,6 @@ class SMALLgp(object):
         gammaddgddg = self._kernel_matrix(self.ddddKddt2ddt1(*kpars), x)
         gammagdg = self._kernel_matrix(self.dKdt2(*kpars), x)
         gammadgg = self._kernel_matrix(self.dKdt1(*kpars), x)
-        
         gammagddg = -self._kernel_matrix(self.ddKdt2dt1(*kpars), x)
         gammaddgg = -self._kernel_matrix(self.ddKdt2dt1(*kpars), x)
         gammadgddg = self._kernel_matrix(self.dddKddt2dt1(*kpars), x)
@@ -144,7 +142,6 @@ class SMALLgp(object):
         gammaddgddg = self._kernel_matrix(self.ddddKddt2ddt1(*kpars), x)
         gammagdg = self._kernel_matrix(self.dKdt2(*kpars), x)
         gammadgg = self._kernel_matrix(self.dKdt1(*kpars), x)
-        
         gammagddg = -self._kernel_matrix(self.ddKdt2dt1(*kpars), x)
         gammaddgg = -self._kernel_matrix(self.ddKdt2dt1(*kpars), x)
         gammadgddg = self._kernel_matrix(self.dddKddt2dt1(*kpars), x)
@@ -210,7 +207,6 @@ class SMALLgp(object):
 
         try:
             L1 = cho_factor(K, overwrite_a=True, lower=False)
-            print(- 0.5*np.dot(yy.T, cho_solve(L1, yy)), - np.sum(np.log(np.diag(L1[0]))), - 0.5*yy.size*np.log(2*np.pi))
             log_like = - 0.5*np.dot(yy.T, cho_solve(L1, yy)) \
                        - np.sum(np.log(np.diag(L1[0]))) \
                        - 0.5*yy.size*np.log(2*np.pi)
