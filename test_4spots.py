@@ -47,29 +47,29 @@ gpObj = BIGgp(kernels.QuasiPeriodic,[None,None, None] , t=t,
 runs, burns = 10000, 10000
 #probabilistic model
 def logprob(p):
-    if any([p[0] < -10, p[0] > np.log(5000), 
-            p[1] < -10, p[1] > np.log(20),
-            p[2] < -10, p[2] > np.log(35), 
-            p[3] < -10, p[3] > np.log(1000),
-            p[4] < -10, p[4] > np.log(30),
-            p[5] < -10, p[5] > np.log(10),
-            p[6] < -10, p[6] > np.log(30),
-            p[7] < -10, p[7] > np.log(5000)]):
+    if any([p[0] < -10, p[0] > np.log(1), 
+            p[1] < -10, p[1] > 10,
+            p[2] < np.log(15), p[2] > np.log(35), 
+            p[3] < -10, p[3] > np.log(100),
+            p[4] < -10, p[4] > np.log(100),
+            p[5] < -10, p[5] > np.log(100),
+            p[6] < -10, p[6] > np.log(100),
+            p[7] < -10, p[7] > np.log(100)]):
         return -np.inf
     logprior = 0.0
     return logprior + gpObj.log_likelihood(np.exp(p), [])
 
 
 #prior from exp(-10) to exp(10)
-lp_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 5000
-le_prior = stats.uniform(np.exp(-10), 20 -np.exp(-10)) #from exp(-10) to 20
-p_prior = stats.uniform(np.exp(-10), 35 -np.exp(-10)) #from exp(-10) to 35
+lp_prior = stats.uniform(np.exp(-10), 1 -np.exp(-10)) #from exp(-10) to 1
+le_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #from exp(-10) to exp(10)
+p_prior = stats.uniform(15, 35-15) #from 15 to 35
 
-vc_prior = stats.uniform(np.exp(-10), 1000 -np.exp(-10)) #from exp(-10) to 1000
-vr_prior = stats.uniform(np.exp(-10), 30 -np.exp(-10)) #from exp(-10) to 30
-lc_prior = stats.uniform(np.exp(-10), 10 -np.exp(-10)) #from exp(-10) to 10
-bc_prior = stats.uniform(np.exp(-10), 30 -np.exp(-10)) #from exp(-10) to 30
-br_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 5000
+vc_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
+vr_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
+lc_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
+bc_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
+br_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
 
 
 def from_prior():
