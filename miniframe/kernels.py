@@ -121,7 +121,6 @@ class dSE_dt2(SquaredExponential):
         f1 = r
         f2 = self.ell**2
         return f1/f2 *np.exp(-0.5*f1*f1/f2)
-        
 
 
 class ddSE_dt2dt1(SquaredExponential):
@@ -283,7 +282,7 @@ class ddQP_dt2dt1(QuasiPeriodic):
         f2 = self.ell_p**2
         f3 = self.ell_e**2
         f4 = self.period
-        
+
         f5 = np.sin(pi*f1/f4)
         f6 = np.cos(pi*f1/f4)
         f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f1/f3 )
@@ -312,21 +311,21 @@ class dddQP_dt2ddt1(QuasiPeriodic):
         f4 = self.period
         f44 = self.period**2
         f444 = self.period**3
-        
+
         f5 = np.sin(pi*f1/f4)
         f55 = np.sin(pi*f1/f4)**2
         f6 = np.cos(pi*f1/f4)
-        f66 = np.cos(pi*f1/f4)**2     
+        f66 = np.cos(pi*f1/f4)**2
         f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
-        
+
         j1 = -1/f3 -4*pi*pi*f66/(f2*f44) +4*pi*pi*f55/(f2*f44)
         j2 = f1/f3 + 4*pi*f5*f5/(f2*f4)
         j3 = (-j2)**2
         j4 = j2
         j5 = -j1
-        j6 = -j2        
-        j8 = 16*pi*pi*pi*f6*f5/(f2*f444)  
-        
+        j6 = -j2
+        j8 = 16*pi*pi*pi*f6*f5/(f2*f444)
+
         return (j1*j2 + j3*j4 + 2*j5*j6 - j8) *f7
 
 
@@ -353,17 +352,17 @@ class dddQP_ddt2dt1(QuasiPeriodic):
         f5 = np.sin(pi*f1/f4)
         f55 = np.sin(pi*f1/f4)**2
         f6 = np.cos(pi*f1/f4)
-        f66 = np.cos(pi*f1/f4)**2     
+        f66 = np.cos(pi*f1/f4)**2
         f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
-        
+
         j1 = -1/f3 -4*pi*pi*f66/(f2*f44) +4*pi*pi*f55/(f2*f44)
         j2 = f1/f3 + 4*pi*f5*f5/(f2*f4)
         j3 = (-j2)**2
         j4 = j2
         j5 = -j1
-        j6 = -j2        
-        j8 = 16*pi*pi*pi*f6*f5/(f2*f444)  
-        
+        j6 = -j2
+        j8 = 16*pi*pi*pi*f6*f5/(f2*f444)
+
         return -(j1*j2 + j3*j4 + 2*j5*j6 - j8) *f7
 
         
@@ -398,7 +397,7 @@ class ddddQP_ddt2ddt1(QuasiPeriodic):
         j1 = 1./f3 + 4*pi*pi*f66/(f2*f44) - 4*pi*pi*f55/(f2*f44)
         j2 = -f1/f3 - 4*pi*f6*f5/(f2*f4)
         j3 = f1/f3 + 4*pi*f6*f5/(f2*f4)
-        j4 = 32*pi*pi*pi*f6*f5*j3/(f2*f444)        
+        j4 = 32*pi*pi*pi*f6*f5*j3/(f2*f444)
         j5 = 32*pi*pi*pi*f6*f5*j2/(f2*f444)
         j6 = 16*pi*pi*pi*pi*f55/(f2*f4444)
         j7 = 16*pi*pi*pi*pi*f66/(f2*f4444)

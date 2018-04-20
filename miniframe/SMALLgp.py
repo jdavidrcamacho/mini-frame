@@ -161,7 +161,7 @@ class SMALLgp(object):
         else:
             diag = 1e-12 * np.identity(self.t.size)
 
-        K_size = self.t.size*self.number_models  #size of the matrix
+        K_size = self.t.size*self.number_models     #size of the matrix
         K_start = np.zeros((K_size, K_size))        #initial "empty" matrix
         if self.number_models == 1:
             K = self.kii(a, self.t, position = 1) + diag

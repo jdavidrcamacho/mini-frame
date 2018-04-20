@@ -10,6 +10,8 @@ import sys
 from time import time
 from scipy import stats
 
+import _pickle as pickle
+
 start_time = time()
 
 flux, rv, bis = np.loadtxt("miniframe/datasets/1spot_dataset.rdb",skiprows=2,unpack=True, usecols=(1, 2, 3))
@@ -40,15 +42,15 @@ gpObj = MEDIUMgp(kernels.QuasiPeriodic,[None,None] , t=t,
                   rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err)
 
 #### simple sample and marginalization with emcee
-runs, burns = 10000, 10000
+runs, burns = 50000, 50000
 #probabilistic model
 def logprob(p):
     if any([p[0] < -10, p[0] > np.log(1), 
             p[1] < -10, p[1] > 10,
             p[2] < np.log(10), p[2] > np.log(50), 
-            p[3] < -10, p[3] > np.log(500),
+            p[3] < np.log(10), p[3] > np.log(500),
             p[4] < -10, p[4] > np.log(500),
-            p[5] < -10, p[5] > np.log(500),
+            p[5] < np.log(10), p[5] > np.log(500),
             p[6] < -10, p[6] > np.log(500)]):
         return -np.inf
     logprior = 0.0
@@ -60,9 +62,9 @@ lp_prior = stats.uniform(np.exp(-10), 1 -np.exp(-10)) #from exp(-10) to 1
 le_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #from exp(-10) to exp(10)
 p_prior = stats.uniform(10, 50-10) #from 15 to 35
 
-vc_prior = stats.uniform(np.exp(-10), 500 -np.exp(-10)) #from exp(-10) to 100
+vc_prior = stats.uniform(10, 500 -10) #from exp(-10) to 100
 vr_prior = stats.uniform(np.exp(-10), 500 -np.exp(-10)) #from exp(-10) to 100
-bc_prior = stats.uniform(np.exp(-10), 500 -np.exp(-10)) #from exp(-10) to 100
+bc_prior = stats.uniform(10, 500 -np.exp(-10)) #from exp(-10) to 100
 br_prior = stats.uniform(np.exp(-10), 500 -np.exp(-10)) #from exp(-10) to 100
 
 
@@ -93,6 +95,15 @@ samples[:, 3] = np.exp(samples[:, 3])   #vc
 samples[:, 4] = np.exp(samples[:, 4])   #vr
 samples[:, 5] = np.exp(samples[:, 5])   #bc
 samples[:, 6] = np.exp(samples[:, 6])   #br
+
+#save data
+pickle.dump(sampler.chain[:, :, 0],open("2lp_1spot.p", 'w'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 1],open("2le_1spot.p", 'w'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 2],open("2P_1spot.p", 'w'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 3],open("2vc_1spot.p", 'w'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 4],open("2vr_1spot.p", 'w'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 5],open("2bc_1spot.p", 'w'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 6],open("2br_1spot.p", 'w'),protocol=-1)  
 
 
 ll1, ll2, pp,vcvc, vrvr, bcbc,brbr = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
