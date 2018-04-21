@@ -10,7 +10,7 @@ from time import time
 import numpy as np
 import emcee
 
-import matplotlib.pyplot as pl
+import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from scipy import stats
 
@@ -18,22 +18,25 @@ import _pickle as pickle
 
 start_time = time()
 
-flux, rv, bis = np.loadtxt("miniframe/datasets/1spot_dataset.rdb",skiprows=2,unpack=True, usecols=(1, 2, 3))
+phase, flux, rv, bis = np.loadtxt("miniframe/datasets/1spot_soap.rdb",
+                                  skiprows=2, unpack=True, 
+                                  usecols=(0, 1, 2, 3))
+t = 25.05 * phase
 log_rhk = flux**2
 
-rv = np.tile(1000*rv, 3)
-bis = np.tile(1000*bis, 3)
-rhk = np.tile(log_rhk, 3)
-flux = np.tile(flux, 3)
-t = np.linspace(0, 75.15, 300)
-#pl.plot(t,rv)
+
+rv = 1000*rv
+bis = 1000*bis
+rhk = log_rhk
+flux = flux
+plt.plot(t,rv,'.')
 
 rms_rv = np.sqrt((1./rv.size*np.sum(rv**2)))
 rms_bis = np.sqrt((1./bis.size*np.sum(bis**2)))
 rms_rhk = np.sqrt((1./rhk.size*np.sum(rhk**2)))
-rvyerr = 0.05*rms_rv * np.ones(300)
-bis_err = 0.10*rms_bis * np.ones(300)
-sig_rhk = 0.20*rms_rhk * np.ones(300)
+rvyerr = 0.05*rms_rv * np.ones(rv.size)
+bis_err = 0.10*rms_bis * np.ones(bis.size)
+sig_rhk = 0.20*rms_rhk * np.ones(rhk.size)
 
 #rv, rvyerr = scale(rv, rvyerr)
 #rhk, sig_rhk = scale(rhk,sig_rhk)
