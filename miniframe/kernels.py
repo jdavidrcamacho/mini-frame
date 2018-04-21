@@ -173,6 +173,7 @@ class dddSE_ddt2dt1(SquaredExponential):
         f222 = self.ell**6
         return (-f111/f222 +3.0*f1/f22) *np.exp(-0.5*f11/f2)
 
+
 class ddddSE_ddt2ddt1(SquaredExponential):
     """
     Derivative of the SquaredExponential kernel with respect to t1t1 and t2t2.
@@ -191,6 +192,7 @@ class ddddSE_ddt2ddt1(SquaredExponential):
         f2222 = self.ell**8
 
         return (f11/f2222 -6.0*f1/f222 +3.0/f22) *np.exp(-0.5*f1/f2)
+
 
 # Quasi-periodic kernel
 class QuasiPeriodic(kernel):
@@ -289,7 +291,7 @@ class ddQP_dt2dt1(QuasiPeriodic):
         f8 = (-(4*pi*f5*f6)/(f2*f4) - f1/f3)
         f9 = ((4*pi*f5*f6)/(f2*f4) + f1/f3) 
         return (f8*f9 +1.0/f3 +4*pi*pi*f6*f6/(f2*f4*f4) \
-                                                -4*pi*pi*f5*f5/(f2*f4*f4)) *f7 
+                                                -4*pi*pi*f5*f5/(f2*f4*f4)) *f7
 
 
 class dddQP_dt2ddt1(QuasiPeriodic):
@@ -365,8 +367,7 @@ class dddQP_ddt2dt1(QuasiPeriodic):
 
         return -(j1*j2 + j3*j4 + 2*j5*j6 - j8) *f7
 
-        
-        
+
 class ddddQP_ddt2ddt1(QuasiPeriodic):
     """
     Second derivative of the QuasiPeriodic kernel with respect to t1t1 and t2t2.
@@ -408,7 +409,6 @@ class ddddQP_ddt2ddt1(QuasiPeriodic):
         j11 = (-j1)**2
         return (4*j1*j2*j3 -j4 +j5 -j6 +j7 +j8*j9 \
                                             +j10*j9 +j8*j10 +j11 +2*j1**2) *f7
-
 
 
 ### END

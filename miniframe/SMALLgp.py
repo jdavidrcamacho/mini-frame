@@ -109,6 +109,7 @@ class SMALLgp(object):
         """ returns the value of the mean function """
         return MeanModel(self.t)
 
+
     def kii(self, a, x, position):
         """ Creates the diagonal matrices used to form the final matrix """
         kpars = self._kernel_pars(a)
