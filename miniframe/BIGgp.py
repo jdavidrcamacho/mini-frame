@@ -298,12 +298,43 @@ class BIGgp(object):
         return norm.rvs()
 
 
-    def sample_from_G(self, t, a):
+    def sample_from_gp(self, t, a):
         kpars = self._kernel_pars(a)
         cov = self._kernel_matrix(self.kernel(*kpars), t)
         norm = multivariate_normal(np.zeros_like(t), cov)
         return norm.rvs()
 
+    #Do I want it here or outside?
+    def draw_from_gp(self, t, a):
+        kpars = self._kernel_pars(a)
+        cov = self._kernel_matrix(self.kernel(*kpars), t)
+
+        #drawing RVs
+        L1 = cho_factor(cov)
+        sol = cho_solve(L1, self.rv)
+
+        #TO DO
+        #First I want the normal covariance, not what is happening in cov,
+        #needs redoing, 
+        #then I calc for new yys in the np.dot bellow
+
+
+        rv_mean = [] #mean = K*.K-1.y  
+        for i, e in enumerate(t):
+            rv_mean.append(np.dot(cov[i,:], sol))
+
+        rv_var = [] #var=  K** - K*.K-1.K*.T
+        diag = np.diagonal(cov)
+        for i, e in enumerate(t):
+            #K**=diag[i]; K*=new_lines[i]      
+            a = diag[i]
+            newsol = cho_solve(L1, cov[i])
+            d = np.dot(cov[i,:], newsol)
+            result = a - d      
+            rv_var.append(result)
+        
+        rv_std = np.sqrt(rv_var) #standard deviation
+        return [rv_mean,rv_std]
 
 #    def run_mcmc(self, a=None, b=None, iter=20, burns=10):
 #        """
