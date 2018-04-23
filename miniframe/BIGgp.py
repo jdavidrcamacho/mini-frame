@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import matplotlib.pyplot as plt
-import emcee
 
-from sys import exit
 from scipy.linalg import cho_factor, cho_solve, LinAlgError, eigh
 from scipy import stats
 from scipy.stats import multivariate_normal
@@ -305,7 +303,7 @@ class BIGgp(object):
         norm = multivariate_normal(np.zeros_like(t), cov)
         return norm.rvs()
 
-    #Do I want it here or outside?
+
     def draw_from_gp(self, time, a, model = 'rv' ):
         kpars = self._kernel_pars(a)
         cov = self._kernel_matrix(self.kernel(*kpars), self.t)
@@ -320,44 +318,33 @@ class BIGgp(object):
         if model == 'rhk':
             print('Working with log(Rhk)')
             sol = cho_solve(L1, self.rhk)
-        #else:
-        #    exit('select a valid model')
-        #TO DO
-        #First I want the normal covariance, not what is happening in cov,
-        #needs redoing, 
-        #then I calc for new yys in the np.dot bellow
+
         k = cov
-        
         kernel = self.kernel(*kpars)
-        print(kernel)
         new_r = time[:, None] - self.t[None, :]
-        print(new_r)
         new_lines = kernel(new_r)
-        print(new_lines)
         k = np.vstack([k,new_lines])
-        
+
         new_r = time[:,None] - time[None,:]
-        new_columns = kernel(new_r)        
+        new_columns = kernel(new_r)
         kcolumns = np.vstack([new_lines.T,new_columns])
-        
         k = np.hstack([k, kcolumns])
 
-        y_mean=[] #mean = K*.K-1.y  
+        y_mean=[] #mean = K*.K-1.y
         for i, e in enumerate(time):
             y_mean.append(np.dot(new_lines[i,:], sol))
-        
         y_var=[] #var=  K** - K*.K-1.K*.T
         diag=np.diagonal(new_columns)
         for i, e in enumerate(time):
-            #K**=diag[i]; K*=new_lines[i]      
+            #K**=diag[i]; K*=new_lines[i]
             a=diag[i]
             newsol = cho_solve(L1, new_lines[i])
             d=np.dot(new_lines[i,:],newsol)
-            result=a-d      
+            result=a-d
             y_var.append(result)
-        
+
         y_std = np.sqrt(y_var) #standard deviation
-        return [y_mean,y_std]
+        return y_mean, y_std
 
 #    def run_mcmc(self, a=None, b=None, iter=20, burns=10):
 #        """
