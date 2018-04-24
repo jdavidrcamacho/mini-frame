@@ -317,26 +317,29 @@ class BIGgp(object):
     def predict_G(self, time, y, a):
         tstar = time[:, None] - self.t[None, :]
         kpars = self._kernel_pars(a)
-        K = self._kernel_matrix(self.kernel(*kpars), self.t)
+        K =  self._kernel_matrix(self.kernel(*kpars), self.t)
         Kstar = self.kernel(*kpars)(tstar)
-        print(Kstar.shape)
+
         try:
             L1 = cho_factor(K)
+            print('Positive definite')
         except LinAlgError:
-            print('Positive indefinite matrix')
+            print('Not positive definite matrix')
             return np.zeros_like(time), 0, 0, 0
         
         sol = cho_solve(L1, y)
         y_mean = np.dot(Kstar, sol)
+        #correct till here
         
         tstarstar = time[:,None] - time[None,:]
-        #Kstarstar = self._kernel_matrix(self.kernel(*kpars), tstarstar)
-
+        print(tstarstar.shape)        
+        #Kstarstar = self._kernel_matrix(self.kernel(a[-5:]), tstarstar)
+        #print(Kstarstar.shape)
         #cov =  K** - K*.K-1.K*.T
         y_cov =[]
         
-        print(L1)
-        print(Kstar.shape)
+        #print(L1)
+        #print(Kstar.shape)
         
         #FOR EACH Kstar do cho_solve
         #then stuff
