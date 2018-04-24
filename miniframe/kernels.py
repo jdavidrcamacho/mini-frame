@@ -206,8 +206,8 @@ class QuasiPeriodic(kernel):
         ell_e = evolutionary time scale
         period
     """
-    def __init__(self, ell_p, ell_e, period):
-        super(QuasiPeriodic, self).__init__(ell_p, ell_e, period)
+    def __init__(self, ell_e, ell_p, period):
+        super(QuasiPeriodic, self).__init__(ell_e, ell_p, period)
         self.ell_p = ell_p
         self.ell_e = ell_e
         self.period = period
@@ -227,8 +227,8 @@ class dQP_dt1(QuasiPeriodic):
     Derivative of the QuasiPeriodic kernel with respect to t1.
     Equation A8 in the paper.
     """
-    def __init__(self, ell_p, ell_e, period):
-        super(dQP_dt1, self).__init__(ell_p, ell_e, period)
+    def __init__(self, ell_e, ell_p, period):
+        super(dQP_dt1, self).__init__(ell_e, ell_p, period)
         self.ell_p = ell_p
         self.ell_e = ell_e
         self.period = period
@@ -250,8 +250,8 @@ class dQP_dt2(QuasiPeriodic):
     Derivative of the QuasiPeriodic kernel with respect to t1.
     Equation A9 in the paper.
     """
-    def __init__(self, ell_p, ell_e, period):
-        super(dQP_dt2, self).__init__(ell_p, ell_e, period)
+    def __init__(self, ell_e, ell_p, period):
+        super(dQP_dt2, self).__init__(ell_e, ell_p, period)
         self.ell_p = ell_p
         self.ell_e = ell_e
         self.period = period
@@ -273,8 +273,8 @@ class ddQP_dt2dt1(QuasiPeriodic):
     Second derivative of the QuasiPeriodic kernel with respect to t1 and t2.
     Equation A10 in the paper.
     """
-    def __init__(self, ell_p, ell_e, period):
-        super(ddQP_dt2dt1, self).__init__(ell_p, ell_e, period)
+    def __init__(self, ell_e, ell_p, period):
+        super(ddQP_dt2dt1, self).__init__(ell_e, ell_p, period)
         self.ell_p = ell_p
         self.ell_e = ell_e
         self.period = period
@@ -299,8 +299,8 @@ class dddQP_dt2ddt1(QuasiPeriodic):
     Second derivative of the QuasiPeriodic kernel with respect to t1t1 and t2.
     Equation A10 in the paper.
     """
-    def __init__(self, ell_p, ell_e, period):
-        super(dddQP_dt2ddt1, self).__init__(ell_p, ell_e, period)
+    def __init__(self, ell_e, ell_p, period):
+        super(dddQP_dt2ddt1, self).__init__(ell_e, ell_p, period)
         self.ell_p = ell_p
         self.ell_e = ell_e
         self.period = period
@@ -336,8 +336,8 @@ class dddQP_ddt2dt1(QuasiPeriodic):
     Second derivative of the QuasiPeriodic kernel with respect to t1 and t2t2.
     Equation A10 in the paper.
     """
-    def __init__(self, ell_p, ell_e, period):
-        super(dddQP_ddt2dt1, self).__init__(ell_p, ell_e, period)
+    def __init__(self, ell_e, ell_p, period):
+        super(dddQP_ddt2dt1, self).__init__(ell_e, ell_p, period)
         self.ell_p = ell_p
         self.ell_e = ell_e
         self.period = period
@@ -373,8 +373,8 @@ class ddddQP_ddt2ddt1(QuasiPeriodic):
     Second derivative of the QuasiPeriodic kernel with respect to t1t1 and t2t2.
     Equation A10 in the paper.
     """
-    def __init__(self, ell_p, ell_e, period):
-        super(ddddQP_ddt2ddt1, self).__init__(ell_p, ell_e, period)
+    def __init__(self, ell_e, ell_p, period):
+        super(ddddQP_ddt2ddt1, self).__init__(ell_e, ell_p, period)
         self.ell_p = ell_p
         self.ell_e = ell_e
         self.period = period
