@@ -329,68 +329,63 @@ class BIGgp(object):
         
         sol = cho_solve(L1, y)
         y_mean = np.dot(Kstar, sol)
-        #correct till here
-        
-        tstarstar = time[:,None] - time[None,:]
-        print(tstarstar.shape)        
-        #Kstarstar = self._kernel_matrix(self.kernel(a[-5:]), tstarstar)
-        #print(Kstarstar.shape)
-        #cov =  K** - K*.K-1.K*.T
-        y_cov =[]
-        
-        #print(L1)
-        #print(Kstar.shape)
-        
-        #FOR EACH Kstar do cho_solve
-        #then stuff
-        
-        #f = cho_solve(L1, Kstar)
-        #print(f.shape)
-        #kstarT_k_kstar = np.dot(Kstar, cho_solve(L1, Kstar))
-        #y_cov.append(Kstarstar - kstarT_k_kstar) #+ 1e-12 * np.identity(time.size)
-        #y_cov = np.array(y_cov)
-        #print(y_cov.shape)
-        #y_var = np.diag(y_cov)
-        #y_std = np.sqrt(y_var)
+
+        Kstarstar = self._kernel_matrix(self.kernel(*kpars), time)
+        kstarT_k_kstar = []
+        for i, e in enumerate(time):
+            kstarT_k_kstar.append(np.dot(Kstar, cho_solve(L1, Kstar[i,:])))
+        y_cov = Kstarstar - kstarT_k_kstar
+
+        y_var = np.diag(y_cov)
+        y_std = np.sqrt(y_var)
         return y_mean,  y_cov, y_var, y_std
 
     def predict_Gdot(self, time, y, a):
         tstar = time[:, None] - self.t[None, :]
         kpars = self._kernel_pars(a)
         K = self._kernel_matrix(self.ddKdt2dt1(*kpars), self.t)
-        Kts = self.ddKdt2dt1(*kpars)(tstar)
+        Kstar = self.kernel(*kpars)(tstar)
+
         try:
             L1 = cho_factor(K)
+            print('Positive definite matrix')
         except LinAlgError:
-            print('Positive indefinite matrix')
-            return np.zeros_like(time), 0
-        
+            print('Not positive definite matrix')
+            return np.zeros_like(time), 0, 0, 0
+
         sol = cho_solve(L1, y)
-        y_mean = np.dot(Kts, sol)
-        #y_var = np.diag(Kts)
-        #y_std = np.sqrt(y_var)
-        return y_mean,  Kts
+        y_mean = np.dot(Kstar, sol)
 
-    
-    def predict_rv(self, time, y, a):
-        mu, _= self.predict_G(time, y, a)
-        mudot, _ = self.predict_Gdot(time, y, a)
-        
-        vc, vr, lc, bc, br = self._scaling_pars(a)
-        return vc*mu + vr*mudot
+        Kstarstar = self._kernel_matrix(self.ddKdt2dt1(*kpars), time)
+        kstarT_k_kstar = []
+        for i, e in enumerate(time):
+            kstarT_k_kstar.append(np.dot(Kstar, cho_solve(L1, Kstar[i,:])))
+        y_cov = Kstarstar - kstarT_k_kstar
 
-    def predict_rhk(self, time, y, a):
-        mu, _, = self.predict_G(time, y, a)
-        
-        vc, vr, lc, bc, br = self._scaling_pars(a)
-        return lc*mu 
+        y_var = np.diag(y_cov)
+        y_std = np.sqrt(y_var)
+        return y_mean,  y_cov, y_var, y_std
 
-    def predict_bis(self, time, y, a):
-        mu, _, = self.predict_G(time, y, a)
-        mudot, _ = self.predict_Gdot(time, y, a)
-        
+
+    def predict_rv(self, time, a):
+        mu, _, _, std = self.predict_G(time, self.rv, a)
+        mudot, _, _, stddot = self.predict_Gdot(time, self.rv, a)
+
         vc, vr, lc, bc, br = self._scaling_pars(a)
-        return bc*mu + br*mudot
+        return vc*mu + vr*mudot, vc*std + vr*stddot
+
+    def predict_rhk(self, time, a):
+        mu, _, _, std = self.predict_G(time, self.rhk, a)
+
+        vc, vr, lc, bc, br = self._scaling_pars(a)
+        return lc*mu, lc*std 
+
+    def predict_bis(self, time, a):
+        mu, _, _, std = self.predict_G(time, self.bis, a)
+        mudot, _, _, stddot = self.predict_Gdot(time, self.bis, a)
+
+        vc, vr, lc, bc, br = self._scaling_pars(a)
+        return bc*mu + br*mudot, bc*std + br*stddot
 
 
     def show_matrix(self, x):
