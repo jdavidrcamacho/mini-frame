@@ -304,30 +304,50 @@ class BIGgp(object):
         return norm.rvs()
 
 
-    def draw_from_gp(self, time, a, model = 'rv' ):
+    def draw_from_gp(self, time, a, model = 'rv', nugget = False):
         kpars = self._kernel_pars(a)
-        cov = self._kernel_matrix(self.kernel(*kpars), self.t)
-        L1 = cho_factor(cov)
-        
+        nugget_value = 0.01
+        #gives the covariance matrix made with self.kernel, not what we want
+        #cov = self._kernel_matrix(self.kernel(*kpars), self.t)
+
         if model == 'rv':
             print('Working with RVs')
+            cov = self.k11(a, self.t) + self.rverr**2 * np.identity(self.t.size)
+            if nugget:
+                cov = (1 - nugget_value)*cov + nugget_value*np.diag(np.diag(cov))
+            L1 = cho_factor(cov)
             sol = cho_solve(L1, self.rv)
-        if model == 'bis':
-            print('Working with BIS')
-            sol = cho_solve(L1, self.bis)
+
         if model == 'rhk':
             print('Working with log(Rhk)')
+            cov = self.k22(a, self.t) + self.sig_rhk**2 * np.identity(self.t.size)
+            if nugget:
+                cov = (1 - nugget_value)*cov + nugget_value*np.diag(np.diag(cov))
+            L1 = cho_factor(cov)
             sol = cho_solve(L1, self.rhk)
+
+        if model == 'bis':
+            print('Working with BIS')
+            cov = self.k33(a, self.t) + self.sig_bis**2 * np.identity(self.t.size)
+            if nugget:
+                cov = (1 - nugget_value)*cov + nugget_value*np.diag(np.diag(cov))
+            L1 = cho_factor(cov)
+            sol = cho_solve(L1, self.bis)
 
         k = cov
         kernel = self.kernel(*kpars)
         new_r = time[:, None] - self.t[None, :]
         new_lines = kernel(new_r)
-        k = np.vstack([k,new_lines])
+        k = np.vstack([k , new_lines])
 
         new_r = time[:,None] - time[None,:]
         new_columns = kernel(new_r)
-        kcolumns = np.vstack([new_lines.T,new_columns])
+#        print(new_columns)
+#        plt.figure()
+#        plt.imshow(new_columns)
+#        plt.show()
+
+        kcolumns = np.vstack([new_lines.T, new_columns])
         k = np.hstack([k, kcolumns])
 
         y_mean=[] #mean = K*.K-1.y
@@ -335,67 +355,18 @@ class BIGgp(object):
             y_mean.append(np.dot(new_lines[i,:], sol))
         y_var=[] #var=  K** - K*.K-1.K*.T
         diag=np.diagonal(new_columns)
+#        print(diag)
         for i, e in enumerate(time):
             #K**=diag[i]; K*=new_lines[i]
-            a=diag[i]
-            newsol = cho_solve(L1, new_lines[i])
-            d=np.dot(new_lines[i,:],newsol)
-            result=a-d
+            kstarstar = diag[i]
+#            print(kstarstar)
+            kstarkkstar = np.dot(new_lines[i,:], cho_solve(L1, new_lines[i]))
+#            print(kstarkkstar)
+            result = kstarstar - kstarkkstar
             y_var.append(result)
 
         y_std = np.sqrt(y_var) #standard deviation
         return y_mean, y_std
-
-#    def run_mcmc(self, a=None, b=None, iter=20, burns=10):
-#        """
-#        A simple mcmc implementation using emcee
-#        Parameters:
-#            iter = number of iterarions
-#            burns = numbber of burn-ins
-#            p0 = parameters of the kernel and mean function (if exists)
-#        """
-#        if b == None:
-#            #there is nothing to run... yet
-#            pass
-#        else:
-#            #kernel parameters
-#            params_size = a.size
-#
-#            #priors settings
-#            prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10))
-#            #sampler settings
-#            nwalkers, ndim = 2*( len(a)+len(b) ), len(a)+len(b)
-#
-#            sampler = emcee.EnsembleSampler(nwalkers, ndim, logprob)
-#
-#            #initializing the walkers
-#            p0 = np.hstack((a,b))
-#            p0 = [np.log(prior.rvs()) for i in range(nwalkers)]
-#            #running burn-in
-#            p0, _, _ = sampler.run_mcmc(p0, burns)
-#            #running production chain
-#            sampler.run_mcmc(p0, iter);
-#
-#            #quantiles
-#            burnin = burns
-#            samples = np.exp( sampler.chain[:, burnin:, :].reshape((-1, ndim)) )
-#            mcmc = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
-#                        zip(*np.percentile(samples, [16, 50, 84],axis=0)))
-#            for i in range(len(mcmc)):
-#                print('var{0} = {1[0]} +{1[1]} -{1[2]}'.format(i,mcmc[i]))
-#
-#
-#def logprob(gp, p0):
-#    params_size = gp._kernel_pars,size
-#    if np.any((-10 > p0) + (p0 > 10)):
-#        return -np.inf
-#    logprior = 0.0
-#    print(p0)
-#    print('size of it', params_size)
-#    a = p0[0 : params_size]
-#    b = p0[params_size : -1]
-#    #update the kernel and compute the log likelihood
-#    return logprior + gp.log_likelihood(a, b, gp.y, nugget = True)
 
 
 #Auxiliary functions
