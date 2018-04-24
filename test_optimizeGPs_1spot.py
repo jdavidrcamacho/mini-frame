@@ -9,14 +9,14 @@ from time import time
 
 import numpy as np
 import emcee
-
 import matplotlib.pyplot as plt
+import _pickle as pickle
+
 from matplotlib.ticker import MaxNLocator
 from scipy import stats
 
-import _pickle as pickle
 
-start_time = time()
+
 
 phase, flux, rv, bis = np.loadtxt("miniframe/datasets/1spot_soap.rdb",
                                   skiprows=2, unpack=True, 
@@ -49,36 +49,35 @@ gpObj = BIGgp(kernels.QuasiPeriodic,[None,None, None] , t=t,
                   rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
 
 #### simple sample and marginalization with emcee
-runs, burns = 2000, 2000
+runs, burns = 5000, 5000
 #probabilistic model
 def logprob(p):
-    if any([p[0] < np.log(1), p[0] > np.log(5000), 
-            p[1] < -10, p[1] > np.log(15),
+    if any([p[0] < -10, p[0] > np.log(5000), 
+            p[1] < -10, p[1] > np.log(5000),
             p[2] < np.log(10), p[2] > np.log(50), 
             
-            p[3] < -10, p[3] > 10,
-            p[4] < -10, p[4] > np.log(10),
+            p[3] < -10, p[3] > np.log(5000),
+            p[4] < -10, p[4] > np.log(5000),
             
-            p[5] < -10, p[5] > np.log(500),
-            p[6] < np.log(1000), p[6] > np.log(5000),
-            p[7] < np.log(1000), p[7] > np.log(21000)]):
+            p[5] < -10, p[5] > np.log(5000),
+            p[6] < -10, p[6] > np.log(5000),
+            p[7] < -10, p[7] > np.log(5000)]):
         return -np.inf
     logprior = 0.0
     return logprior + gpObj.log_likelihood(np.exp(p), [])
 
 
 #prior from exp(-10) to exp(10)
-lp_prior = stats.uniform(1, 5000 -1) #from exp(-10) to 1
-le_prior = stats.uniform(np.exp(-10), 15 -np.exp(-10)) #from exp(-10) to exp(10)
+lp_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 1
+le_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to exp(10)
 p_prior = stats.uniform(10, 50-10) #from 15 to 35
 
-vc_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #from exp(-10) to 100
-vr_prior = stats.uniform(np.exp(-10), 10 -np.exp(-10)) #from exp(-10) to 100
+vc_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 100
+vr_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 100
 
 lc_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 100
-
-bc_prior = stats.uniform(1000, 5000 -1000) #from exp(-10) to 100
-br_prior = stats.uniform(1000, 21000 -1000) #from exp(-10) to 100
+bc_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 100
+br_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 100
 
 
 def from_prior():
@@ -169,15 +168,26 @@ print('Br = {0[0]} +{0[1]} -{0[2]}'.format(brbr))
 
 time = np.linspace(0, 75, 500)
 a = [ll1[0], ll2[0], pp[0], vcvc[0], vrvr[0], lclc[0], bcbc[0], brbr[0]]
-print(a)
-mu, std = gpObj.draw_from_gp(time, a,  model = 'rv')
+mu1, std1 = gpObj.draw_from_gp(time, a,  model = 'rv')
+mu2, std2 = gpObj.draw_from_gp(time, a,  model = 'bis')
+mu3, std3 = gpObj.draw_from_gp(time, a,  model = 'rhk')
 
-plt.figure()
-plt.fill_between(time, mu+std, mu-std, color="grey", alpha=0.5)
-plt.plot(time, mu, "k--", alpha=1, lw=1.5)
-plt.plot(t,rv,"b*")
-plt.xticks(fontsize = 18); plt.yticks(fontsize=18)
+f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
+ax1.set_title(' ')
+ax1.fill_between(time, mu1+std1, mu1-std1, color="grey", alpha=0.5)
+ax1.plot(time, mu1, "k-", alpha=1, lw=1.5)
+ax1.plot(t,rv,"b*")
+ax1.set_ylabel("RVs")
 
-from time import time
-end_time = time()
-print('It took ', end_time-start_time, 'seconds to run', runs*2, 'iterations.')
+ax2.fill_between(time, mu2+std2, mu2-std2, color="grey", alpha=0.5)
+ax2.plot(time, mu2, "k-", alpha=1, lw=1.5)
+ax2.plot(t,bis,"b*")
+ax2.set_ylabel("BIS")
+
+ax3.fill_between(time, mu3+std3, mu3-std3, color="grey", alpha=0.5)
+ax3.plot(time, mu3, "k-", alpha=1, lw=1.5)
+ax3.plot(t,rhk,"b*")
+ax3.set_ylabel("flux")
+ax3.set_xlabel("time")
+plt.show()
+

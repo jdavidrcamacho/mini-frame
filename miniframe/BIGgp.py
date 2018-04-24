@@ -304,7 +304,8 @@ class BIGgp(object):
         return norm.rvs()
 
 
-    def draw_from_gp(self, time, a, model = 'rv', nugget = False):
+################################################################################
+    def draw_from_gp0(self, time, a, model = 'rv', nugget = False):
         kpars = self._kernel_pars(a)
         nugget_value = 0.01
         #gives the covariance matrix made with self.kernel, not what we want
@@ -367,7 +368,70 @@ class BIGgp(object):
 
         y_std = np.sqrt(y_var) #standard deviation
         return y_mean, y_std
+################################################################################
 
+    def draw_from_gp(self, time, a, model = 'rv', nugget = False):
+        kpars = self._kernel_pars(a)
+        nugget_value = 0.01
+        #gives the covariance matrix made with self.kernel, not what we want
+        #cov = self._kernel_matrix(self.kernel(*kpars), self.t)
+
+        if model == 'rv':
+            print('Working with RVs')
+            cov = self.k11(a, self.t) + self.rverr**2 * np.identity(self.t.size)
+            if nugget:
+                cov = (1 - nugget_value)*cov + nugget_value*np.diag(np.diag(cov))
+            L1 = cho_factor(cov)
+            sol = cho_solve(L1, self.rv)
+
+        if model == 'rhk':
+            print('Working with log(Rhk)')
+            cov = self.k22(a, self.t) + self.sig_rhk**2 * np.identity(self.t.size)
+            if nugget:
+                cov = (1 - nugget_value)*cov + nugget_value*np.diag(np.diag(cov))
+            L1 = cho_factor(cov)
+            sol = cho_solve(L1, self.rhk)
+
+        if model == 'bis':
+            print('Working with BIS')
+            cov = self.k33(a, self.t) + self.sig_bis**2 * np.identity(self.t.size)
+            if nugget:
+                cov = (1 - nugget_value)*cov + nugget_value*np.diag(np.diag(cov))
+            L1 = cho_factor(cov)
+            sol = cho_solve(L1, self.bis)
+
+        k = cov
+        kernel = self.kernel(*kpars)
+        new_r = time[:, None] - self.t[None, :]
+        kstar = kernel(new_r)
+        kfinal = np.vstack([k , kstar])
+
+        new_r = time[:,None] - time[None,:]
+        kstarstar = kernel(new_r)
+#        print(kstarstar)
+#        plt.figure()
+#        plt.imshow(kstarstar)
+#        plt.show()
+
+        #kfinal =
+        #[  k   k*.T ]
+        #[  k*  k**  ]
+        kcolumns = np.vstack([kstar.T, kstarstar])
+        kfinal = np.hstack([kfinal, kcolumns])
+
+        y_mean=[] #mean = K*.K-1.y
+        for i, e in enumerate(time):
+            y_mean.append(np.dot(kstar[i,:], sol))
+
+        #cov =  K** - K*.K-1.K*.T
+        for i, e in enumerate(time):
+            #K**=diag[i]; K*=kstar[i]
+            kstarT_k_kstar = np.dot(kstar, cho_solve(L1, kstar[i,:]))
+            y_cov = kstarstar - kstarT_k_kstar + 1e-12 * np.identity(time.size)
+
+        y_var = np.diag(y_cov) #standard deviation
+        y_std = np.sqrt(y_var)
+        return y_mean, y_cov, y_var, y_std
 
 #Auxiliary functions
 def scale(x, xerr):

@@ -41,7 +41,8 @@ gpObj = BIGgp(kernels.QuasiPeriodic,[None,None, None] , t=t,
 
 time = np.linspace(0, 75.15, 500)
 # a = [lp, le, p ,vc, vr, lc, bc, br]
-a = [3947.411, 0.626, 23.584, 20096.503, 5.651e-5, 298.029, 4088.363, 16900.052]
+#a = [3947.411, 0.626, 23.584, 20096.503, 5.651e-5, 298.029, 4088.363, 16900.052]
+a = [1, 1, 25.05, 1, 1, 1, 1, 1]
 
 mu1, std1 = gpObj.draw_from_gp(time, a,  model = 'rv')
 mu2, std2 = gpObj.draw_from_gp(time, a,  model = 'bis')

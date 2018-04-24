@@ -13,6 +13,7 @@ import emcee
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from scipy import stats
+from scipy.stats import multivariate_normal
 
 import _pickle as pickle
 
@@ -51,10 +52,25 @@ gpObj = BIGgp(kernels.QuasiPeriodic,[None,None, None] , t=t,
 time = np.linspace(0, 75, 500)
 #a = [ll1[0], ll2[0], pp[0], vcvc[0], vrvr[0], lclc[0], bcbc[0], brbr[0]]
 
+#a = [3947.411, 0.626, 23.584, 20096.503, 5.651e-5, 298.029, 4088.363, 16900.052]
 a = [1, 1, 25.05, 1, 1 ,1 ,1, 1]
-mu1, std1 = gpObj.draw_from_gp(time, a,  model = 'rv')
-mu2, std2 = gpObj.draw_from_gp(time, a,  model = 'bis')
-mu3, std3 = gpObj.draw_from_gp(time, a,  model = 'rhk')
+mu1, cov1, var1, std1 = gpObj.draw_from_gp(time, a,  model = 'rv')
+mu2, cov2, var2, std2 = gpObj.draw_from_gp(time, a,  model = 'bis')
+mu3, cov3, var3, std3 = gpObj.draw_from_gp(time, a,  model = 'rhk')
+
+#plt.figure()
+#plt.imshow(cov1)
+#plt.figure()
+#plt.imshow(cov2)
+#plt.figure()
+#plt.imshow(cov3)
+#plt.show()
+
+print(isposdef(cov1), isposdef(cov2), isposdef(cov3))
+
+#norm = multivariate_normal(mu1, var1, 500)
+
+
 
 f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
 ax1.set_title(' ')
