@@ -164,7 +164,7 @@ class BIGgp(object):
 
     def _scaling_pars(self, a):
         return a[-5:]
-
+ 
 
     def k11(self, a, x):
         """ Equation 18 """
@@ -291,96 +291,121 @@ class BIGgp(object):
 
 
     def sample(self, a):
+        """ Sample from final K, see equation (24) """
         mean = np.zeros_like(self.tt)
         cov = self.compute_matrix(a)
         norm = multivariate_normal(mean, cov, allow_singular=True)
         return norm.rvs()
 
 
-    def sample_from_gp(self, t, a):
+    def sample_from_G(self, t, a):
+        """ Sample from G(t), see equations (13), (14), and (15) """
         kpars = self._kernel_pars(a)
         cov = self._kernel_matrix(self.kernel(*kpars), t)
-        norm = multivariate_normal(np.zeros_like(t), cov)
+        norm = multivariate_normal(np.zeros_like(t), cov, allow_singular=True)
         return norm.rvs()
 
 
-################################################################################
-    def draw_from_gp0(self, time, a, model = 'rv', nugget = False):
+    def sample_from_Gdot(self, t, a):
+        """ Sample from Gdot(t), see equations (13), (14), and (15) """
         kpars = self._kernel_pars(a)
-        nugget_value = 0.01
-        #gives the covariance matrix made with self.kernel, not what we want
-        #cov = self._kernel_matrix(self.kernel(*kpars), self.t)
+        cov = self._kernel_matrix(self.ddKdt2dt1(*kpars), t)
+        norm = multivariate_normal(np.zeros_like(t), cov, allow_singular=True)
+        return norm.rvs()
 
-        if model == 'rv':
-            print('Working with RVs')
-            cov = self.k11(a, self.t) + self.rverr**2 * np.identity(self.t.size)
-            if nugget:
-                cov = (1 - nugget_value)*cov + nugget_value*np.diag(np.diag(cov))
-            L1 = cho_factor(cov)
-            sol = cho_solve(L1, self.rv)
 
-        if model == 'rhk':
-            print('Working with log(Rhk)')
-            cov = self.k22(a, self.t) + self.sig_rhk**2 * np.identity(self.t.size)
-            if nugget:
-                cov = (1 - nugget_value)*cov + nugget_value*np.diag(np.diag(cov))
-            L1 = cho_factor(cov)
-            sol = cho_solve(L1, self.rhk)
+    def predict_G(self, time, y, a):
+        tstar = time[:, None] - self.t[None, :]
+        kpars = self._kernel_pars(a)
+        K = self._kernel_matrix(self.kernel(*kpars), self.t)
+        Kstar = self.kernel(*kpars)(tstar)
+        print(Kstar.shape)
+        try:
+            L1 = cho_factor(K)
+        except LinAlgError:
+            print('Positive indefinite matrix')
+            return np.zeros_like(time), 0, 0, 0
+        
+        sol = cho_solve(L1, y)
+        y_mean = np.dot(Kstar, sol)
+        
+        tstarstar = time[:,None] - time[None,:]
+        #Kstarstar = self._kernel_matrix(self.kernel(*kpars), tstarstar)
 
-        if model == 'bis':
-            print('Working with BIS')
-            cov = self.k33(a, self.t) + self.sig_bis**2 * np.identity(self.t.size)
-            if nugget:
-                cov = (1 - nugget_value)*cov + nugget_value*np.diag(np.diag(cov))
-            L1 = cho_factor(cov)
-            sol = cho_solve(L1, self.bis)
+        #cov =  K** - K*.K-1.K*.T
+        y_cov =[]
+        
+        print(L1)
+        print(Kstar.shape)
+        
+        #FOR EACH Kstar do cho_solve
+        #then stuff
+        
+        #f = cho_solve(L1, Kstar)
+        #print(f.shape)
+        #kstarT_k_kstar = np.dot(Kstar, cho_solve(L1, Kstar))
+        #y_cov.append(Kstarstar - kstarT_k_kstar) #+ 1e-12 * np.identity(time.size)
+        #y_cov = np.array(y_cov)
+        #print(y_cov.shape)
+        #y_var = np.diag(y_cov)
+        #y_std = np.sqrt(y_var)
+        return y_mean,  y_cov, y_var, y_std
 
-        k = cov
-        kernel = self.kernel(*kpars)
-        new_r = time[:, None] - self.t[None, :]
-        new_lines = kernel(new_r)
-        k = np.vstack([k , new_lines])
+    def predict_Gdot(self, time, y, a):
+        tstar = time[:, None] - self.t[None, :]
+        kpars = self._kernel_pars(a)
+        K = self._kernel_matrix(self.ddKdt2dt1(*kpars), self.t)
+        Kts = self.ddKdt2dt1(*kpars)(tstar)
+        try:
+            L1 = cho_factor(K)
+        except LinAlgError:
+            print('Positive indefinite matrix')
+            return np.zeros_like(time), 0
+        
+        sol = cho_solve(L1, y)
+        y_mean = np.dot(Kts, sol)
+        #y_var = np.diag(Kts)
+        #y_std = np.sqrt(y_var)
+        return y_mean,  Kts
 
-        new_r = time[:,None] - time[None,:]
-        new_columns = kernel(new_r)
-#        print(new_columns)
-#        plt.figure()
-#        plt.imshow(new_columns)
-#        plt.show()
+    
+    def predict_rv(self, time, y, a):
+        mu, _= self.predict_G(time, y, a)
+        mudot, _ = self.predict_Gdot(time, y, a)
+        
+        vc, vr, lc, bc, br = self._scaling_pars(a)
+        return vc*mu + vr*mudot
 
-        kcolumns = np.vstack([new_lines.T, new_columns])
-        k = np.hstack([k, kcolumns])
+    def predict_rhk(self, time, y, a):
+        mu, _, = self.predict_G(time, y, a)
+        
+        vc, vr, lc, bc, br = self._scaling_pars(a)
+        return lc*mu 
 
-        y_mean=[] #mean = K*.K-1.y
-        for i, e in enumerate(time):
-            y_mean.append(np.dot(new_lines[i,:], sol))
-        y_var=[] #var=  K** - K*.K-1.K*.T
-        diag=np.diagonal(new_columns)
-#        print(diag)
-        for i, e in enumerate(time):
-            #K**=diag[i]; K*=new_lines[i]
-            kstarstar = diag[i]
-#            print(kstarstar)
-            kstarkkstar = np.dot(new_lines[i,:], cho_solve(L1, new_lines[i]))
-#            print(kstarkkstar)
-            result = kstarstar - kstarkkstar
-            y_var.append(result)
+    def predict_bis(self, time, y, a):
+        mu, _, = self.predict_G(time, y, a)
+        mudot, _ = self.predict_Gdot(time, y, a)
+        
+        vc, vr, lc, bc, br = self._scaling_pars(a)
+        return bc*mu + br*mudot
 
-        y_std = np.sqrt(y_var) #standard deviation
-        return y_mean, y_std
-################################################################################
+
+    def show_matrix(self, x):
+        """ Plot of the covariance matrices """
+        plt.figure()
+        plt.imshow(x)
+        plt.show()
+
 
     def draw_from_gp(self, time, a, model = 'rv', nugget = False):
         kpars = self._kernel_pars(a)
         nugget_value = 0.01
         #gives the covariance matrix made with self.kernel, not what we want
-        #cov = self._kernel_matrix(self.kernel(*kpars), self.t)
+        #covG = self._kernel_matrix(self.kernel(*kpars), self.t)
 
         if model == 'rv':
             print('Working with RVs')
             cov = self.k11(a, self.t) + self.rverr**2 * np.identity(self.t.size)
-            if nugget:
-                cov = (1 - nugget_value)*cov + nugget_value*np.diag(np.diag(cov))
             L1 = cho_factor(cov)
             sol = cho_solve(L1, self.rv)
 
@@ -424,14 +449,16 @@ class BIGgp(object):
             y_mean.append(np.dot(kstar[i,:], sol))
 
         #cov =  K** - K*.K-1.K*.T
+        y_cov =[]
         for i, e in enumerate(time):
             #K**=diag[i]; K*=kstar[i]
             kstarT_k_kstar = np.dot(kstar, cho_solve(L1, kstar[i,:]))
-            y_cov = kstarstar - kstarT_k_kstar + 1e-12 * np.identity(time.size)
+            y_cov.append(kstarstar - kstarT_k_kstar) #+ 1e-12 * np.identity(time.size)
 
-        y_var = np.diag(y_cov) #standard deviation
-        y_std = np.sqrt(y_var)
-        return y_mean, y_cov, y_var, y_std
+        y_var = np.diag(y_cov) #variance
+        y_std = np.sqrt(y_var) #standard deviation
+        return y_mean, y_cov, y_var, y_std, cov
+
 
 #Auxiliary functions
 def scale(x, xerr):
