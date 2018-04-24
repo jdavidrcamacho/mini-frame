@@ -49,11 +49,11 @@ yerr = np.hstack((rvyerr,sig_rhk,bis_err))
 gpObj = BIGgp(kernels.QuasiPeriodic,[None,None, None] , t=t,
                   rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
 
-time = np.linspace(-1, 76, 1000)
+time = np.linspace(-1, 76, 10)
 #a = [ll1[0], ll2[0], pp[0], vcvc[0], vrvr[0], lclc[0], bcbc[0], brbr[0]]
 
 #a = [3947.411, 0.626, 23.584, 20096.503, 5.651e-5, 298.029, 4088.363, 16900.052]
-a = [1, 1, 25.05, 1, 1, 1 , 1, 1]
+a = [0.1, 1, 25.05, 2.5, 0, 1 , 1, 1]
 
 
 #plt.plot(time, gpObj.sample_from_G(time,a) +gpObj.sample_from_Gdot(time,a) )

@@ -322,11 +322,11 @@ class BIGgp(object):
 
         try:
             L1 = cho_factor(K)
-            print('Positive definite')
+            print('Positive definite matrix')
         except LinAlgError:
             print('Not positive definite matrix')
-            return np.zeros_like(time), 0, 0, 0
-        
+            return np.zeros_like(time), 0
+
         sol = cho_solve(L1, y)
         y_mean = np.dot(Kstar, sol)
 
@@ -336,9 +336,7 @@ class BIGgp(object):
             kstarT_k_kstar.append(np.dot(Kstar, cho_solve(L1, Kstar[i,:])))
         y_cov = Kstarstar - kstarT_k_kstar
 
-        y_var = np.diag(y_cov)
-        y_std = np.sqrt(y_var)
-        return y_mean,  y_cov, y_var, y_std
+        return y_mean, y_cov
 
     def predict_Gdot(self, time, y, a):
         tstar = time[:, None] - self.t[None, :]
@@ -351,7 +349,7 @@ class BIGgp(object):
             print('Positive definite matrix')
         except LinAlgError:
             print('Not positive definite matrix')
-            return np.zeros_like(time), 0, 0, 0
+            return np.zeros_like(time), 0
 
         sol = cho_solve(L1, y)
         y_mean = np.dot(Kstar, sol)
@@ -362,30 +360,37 @@ class BIGgp(object):
             kstarT_k_kstar.append(np.dot(Kstar, cho_solve(L1, Kstar[i,:])))
         y_cov = Kstarstar - kstarT_k_kstar
 
-        y_var = np.diag(y_cov)
-        y_std = np.sqrt(y_var)
-        return y_mean,  y_cov, y_var, y_std
+        return y_mean, y_cov
 
 
     def predict_rv(self, time, a):
-        mu, _, _, std = self.predict_G(time, self.rv, a)
-        mudot, _, _, stddot = self.predict_Gdot(time, self.rv, a)
+        mu, cov = self.predict_G(time, self.rv, a)
+        mudot, covdot = self.predict_Gdot(time, self.rv, a)
 
         vc, vr, lc, bc, br = self._scaling_pars(a)
-        return vc*mu + vr*mudot, vc*std + vr*stddot
+        mean = vc*mu + vr*mudot
+        covariance = vc*cov + vr*covdot
+        std = np.sqrt(np.diag(covariance))
+        return mean, std
 
     def predict_rhk(self, time, a):
-        mu, _, _, std = self.predict_G(time, self.rhk, a)
+        mu, cov = self.predict_G(time, self.rhk, a)
 
         vc, vr, lc, bc, br = self._scaling_pars(a)
-        return lc*mu, lc*std 
+        mean = lc*mu
+        covariance = lc*cov 
+        std = np.sqrt(np.diag(covariance))
+        return mean, std
 
     def predict_bis(self, time, a):
-        mu, _, _, std = self.predict_G(time, self.bis, a)
-        mudot, _, _, stddot = self.predict_Gdot(time, self.bis, a)
+        mu, cov = self.predict_G(time, self.bis, a)
+        mudot, covdot = self.predict_Gdot(time, self.bis, a)
 
         vc, vr, lc, bc, br = self._scaling_pars(a)
-        return bc*mu + br*mudot, bc*std + br*stddot
+        mean = bc*mu + br*mudot
+        covariance = bc*cov + br*covdot
+        std = np.sqrt(np.diag(covariance))
+        return mean, std
 
 
     def show_matrix(self, x):
