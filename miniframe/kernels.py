@@ -79,7 +79,7 @@ class Constant(kernel):
 # Squared exponential kernel
 class SquaredExponential(kernel):
     """ 
-    Squared Exponential kernel, also known as radial basis function 
+        Squared Exponential kernel, also known as radial basis function 
     (RBF kernel) in other works.
 
     Parameters:
@@ -97,7 +97,7 @@ class SquaredExponential(kernel):
 
 class dSE_dt1(SquaredExponential):
     """ 
-    Derivative of the SquaredExponential kernel with respect to t1.
+        Derivative of the SquaredExponential kernel in order to t1.
     """
     def __init__(self, ell):
         super(dSE_dt1, self).__init__(ell)
@@ -111,7 +111,7 @@ class dSE_dt1(SquaredExponential):
 
 class dSE_dt2(SquaredExponential):
     """
-    Derivative of the SquaredExponential kernel with respect to t2.
+        Derivative of the SquaredExponential kernel in order to t2.
     """
     def __init__(self, ell):
         super(dSE_dt2, self).__init__(ell)
@@ -125,7 +125,8 @@ class dSE_dt2(SquaredExponential):
 
 class ddSE_dt2dt1(SquaredExponential):
     """
-    Derivative of the SquaredExponential kernel with respect to t1 and t2.
+        Derivative of the SquaredExponential kernel, 
+    one time in order to  t1 and another in order to t2.
     """
     def __init__(self, ell):
         super(ddSE_dt2dt1, self).__init__(ell)
@@ -139,7 +140,8 @@ class ddSE_dt2dt1(SquaredExponential):
 
 class dddSE_dt2ddt1(SquaredExponential):
     """
-    Derivative of the SquaredExponential kernel with respect to t1t1 and t2.
+        Derivative of the SquaredExponential kernel, 
+    two times in order to  t1 and one in order to t2.
     """
     def __init__(self, ell):
         super(dddSE_dt2ddt1, self).__init__(ell)
@@ -157,7 +159,8 @@ class dddSE_dt2ddt1(SquaredExponential):
 
 class dddSE_ddt2dt1(SquaredExponential):
     """
-    Derivative of the SquaredExponential kernel with respect to t1 and t2t2.
+        Derivative of the SquaredExponential kernel, 
+    one time in order to  t1 and two times in order to t2.
     Equation A6 in the paper, for N=1.
     """
     def __init__(self, ell):
@@ -176,7 +179,8 @@ class dddSE_ddt2dt1(SquaredExponential):
 
 class ddddSE_ddt2ddt1(SquaredExponential):
     """
-    Derivative of the SquaredExponential kernel with respect to t1t1 and t2t2.
+        Derivative of the SquaredExponential kernel, 
+    two times in order to  t1 and two times in order to t2.
     Equation A6 in the paper, for N=1.
     """
     def __init__(self, ell):
@@ -202,8 +206,8 @@ class QuasiPeriodic(kernel):
     Equation 27 in the paper.
 
     Parameters:
-        ell_p = length scale of the periodic component
         ell_e = evolutionary time scale
+        ell_p = length scale of the periodic component
         period
     """
     def __init__(self, ell_e, ell_p, period):
@@ -224,7 +228,7 @@ class QuasiPeriodic(kernel):
 
 class dQP_dt1(QuasiPeriodic):
     """ 
-    Derivative of the QuasiPeriodic kernel with respect to t1.
+        Derivative of the QuasiPeriodic kernel, in order to t1.
     Equation A8 in the paper.
     """
     def __init__(self, ell_e, ell_p, period):
@@ -247,7 +251,7 @@ class dQP_dt1(QuasiPeriodic):
 
 class dQP_dt2(QuasiPeriodic):
     """ 
-    Derivative of the QuasiPeriodic kernel with respect to t1.
+        Derivative of the QuasiPeriodic kernel, in order to t2.
     Equation A9 in the paper.
     """
     def __init__(self, ell_e, ell_p, period):
@@ -270,7 +274,8 @@ class dQP_dt2(QuasiPeriodic):
 
 class ddQP_dt2dt1(QuasiPeriodic):
     """
-    Second derivative of the QuasiPeriodic kernel with respect to t1 and t2.
+        Derivative of the QuasiPeriodic kernel,
+    one time in order to t1 and another in order to t2.
     Equation A10 in the paper.
     """
     def __init__(self, ell_e, ell_p, period):
@@ -296,7 +301,8 @@ class ddQP_dt2dt1(QuasiPeriodic):
 
 class dddQP_dt2ddt1(QuasiPeriodic):
     """
-    Second derivative of the QuasiPeriodic kernel with respect to t1t1 and t2.
+        Derivative of the QuasiPeriodic kernel,
+    two times in order to t1t1 and one time in order t2.
     Equation A10 in the paper.
     """
     def __init__(self, ell_e, ell_p, period):
@@ -333,7 +339,8 @@ class dddQP_dt2ddt1(QuasiPeriodic):
 
 class dddQP_ddt2dt1(QuasiPeriodic):
     """
-    Second derivative of the QuasiPeriodic kernel with respect to t1 and t2t2.
+    Second derivative of the QuasiPeriodic kernel,
+    one time in order to t1t1 and two times in order t2.
     Equation A10 in the paper.
     """
     def __init__(self, ell_e, ell_p, period):
@@ -370,8 +377,9 @@ class dddQP_ddt2dt1(QuasiPeriodic):
 
 class ddddQP_ddt2ddt1(QuasiPeriodic):
     """
-    Second derivative of the QuasiPeriodic kernel with respect to t1t1 and t2t2.
-    Equation A10 in the paper.
+    Second derivative of the QuasiPeriodic kernel,
+    two times in order to  t1 and two times in order to t2.
+    Equation A6 in the paper, for N=1.
     """
     def __init__(self, ell_e, ell_p, period):
         super(ddddQP_ddt2ddt1, self).__init__(ell_e, ell_p, period)

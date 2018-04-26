@@ -88,13 +88,14 @@ class BIGgp(object):
 
 
     def _kernel_matrix(self, kernel, x):
-        """ returns the covariance matrix created by evaluating `kernel` at inputs x """
+        """ Returns the covariance matrix created by evaluating `kernel` at inputs x """
         r = x[:, None] - x[None, :]
         K = kernel(r)
         return K
 
 
     def _kernel_pars(self, a):
+        """ Returns the kernel parameters """
         if self.kernel.__name__ == 'SquaredExponential':
             l, vc, vr, lc, bc, br = a
             return [l]
@@ -107,7 +108,6 @@ class BIGgp(object):
     def mean_pars_size(self):
         return self._mean_pars_size
 
-
     @mean_pars_size.getter
     def mean_pars_size(self):
         self._mean_pars_size = 0
@@ -116,22 +116,9 @@ class BIGgp(object):
             else: self._mean_pars_size += m._parsize
         return self._mean_pars_size
 
-
     @property
     def mean_pars(self):
         return self._mean_pars
-
-
-    # @mean_pars.getter
-    # def mean_pars(self):
-    #     tmp = []
-    #     for m in self.means:
-    #         if m is None: 
-    #             continue
-    #         else: 
-    #             tmp.append(m.pars)
-    #     return np.concatenate(tmp)
-
 
     @mean_pars.setter
     def mean_pars(self, pars):
@@ -163,11 +150,12 @@ class BIGgp(object):
 
 
     def _scaling_pars(self, a):
+        """ Returns Vc, Vr, Lc, Bc, and Br, see paper for more """
         return a[-5:]
  
 
     def k11(self, a, x):
-        """ Equation 18 """
+        """ Equation 18, needed for compute_matrix() """
         kpars = self._kernel_pars(a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
 
@@ -179,7 +167,7 @@ class BIGgp(object):
 
 
     def k22(self, a, x):
-        """ Equation 19 """
+        """ Equation 19, needed for compute_matrix() """
         kpars = self._kernel_pars(a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
 
@@ -188,7 +176,7 @@ class BIGgp(object):
 
 
     def k33(self, a, x):
-        """ Equation 20 """
+        """ Equation 20, needed for compute_matrix() """
         kpars = self._kernel_pars(a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
 
@@ -200,7 +188,7 @@ class BIGgp(object):
 
 
     def k12(self, a, x):
-        """ Equation 21 """
+        """ Equation 21, needed for compute_matrix() """
         kpars = self._kernel_pars(a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
 
@@ -210,7 +198,7 @@ class BIGgp(object):
 
 
     def k13(self, a, x):
-        """ Equation 22 """
+        """ Equation 22, needed for compute_matrix() """
         kpars = self._kernel_pars(a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
 
@@ -222,7 +210,7 @@ class BIGgp(object):
 
 
     def k23(self, a, x):
-        """ Equation 23 """
+        """ Equation 23, needed for compute_matrix() """
         kpars = self._kernel_pars(a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
 
@@ -232,7 +220,12 @@ class BIGgp(object):
 
 
     def compute_matrix(self, a, yerr=True, nugget=False):
-        """ Creates the big covariance matrix, equations 24 in the paper """ 
+        """ Creates the big covariance matrix K, equations 24 in the paper 
+        Parameters
+            a = array with the kernel parameters
+            yerr = True if measurements dataset has errors, False otherwise
+            nugget = True if K is not positive definite, False otherwise
+        """ 
         print ('Vc:%.2f  Vr:%.2f  Lc:%.2f  Bc:%.2f  Br:%.2f' % tuple(self._scaling_pars(a)))
         if yerr:
             diag1 = self.rverr**2 * np.identity(self.t.size)
@@ -291,30 +284,56 @@ class BIGgp(object):
 
 
     def sample(self, a):
-        """ Sample from final K, see equation (24) """
+        """ Sample from final K, see equation (24) 
+        Parameters:
+            a = array with the kernel parameters
+        Returns:
+            Sample of K 
+        """
         mean = np.zeros_like(self.tt)
         cov = self.compute_matrix(a)
         norm = multivariate_normal(mean, cov, allow_singular=True)
         return norm.rvs()
 
 
-    def sample_from_G(self, t, a):
-        """ Sample from G(t), see equations (13), (14), and (15) """
+    def sample_from_G(self, a):
+        """ Sample from the gaussian process G(t), 
+        see equations (13), (14), and (15)
+        Parameters:
+            a = array with the kernel parameters
+        Returns:
+            Sample vector
+        """
         kpars = self._kernel_pars(a)
-        cov = self._kernel_matrix(self.kernel(*kpars), t)
-        norm = multivariate_normal(np.zeros_like(t), cov, allow_singular=True)
+        cov = self._kernel_matrix(self.kernel(*kpars), self.t)
+        norm = multivariate_normal(np.zeros_like(self.t), cov, allow_singular=True)
         return norm.rvs()
 
 
-    def sample_from_Gdot(self, t, a):
-        """ Sample from Gdot(t), see equations (13), (14), and (15) """
+    def sample_from_Gdot(self, a):
+        """ Sample from the Gaussian process Gdot(t),
+        see equations (13), (14), and (15)
+        Parameters:
+            a = array with the kernel parameters
+        Returns:
+            Sample vector
+        """
         kpars = self._kernel_pars(a)
-        cov = self._kernel_matrix(self.ddKdt2dt1(*kpars), t)
-        norm = multivariate_normal(np.zeros_like(t), cov, allow_singular=True)
+        cov = self._kernel_matrix(self.ddKdt2dt1(*kpars),self.t)
+        norm = multivariate_normal(np.zeros_like(self.t), cov, allow_singular=True)
         return norm.rvs()
 
 
     def predict_G(self, time, y, a):
+        """
+            Predition of the Gaussian process G(t)
+        Parameters:
+            time = values where the predictive distribution will be calculated
+            y = values of the dependent variable (the measurements)
+            a = array with the kernel parameters
+        Returns:
+            mean vector, covariance matrix
+        """
         tstar = time[:, None] - self.t[None, :]
         kpars = self._kernel_pars(a)
         K =  self._kernel_matrix(self.kernel(*kpars), self.t)
@@ -335,10 +354,18 @@ class BIGgp(object):
         for i, e in enumerate(time):
             kstarT_k_kstar.append(np.dot(Kstar, cho_solve(L1, Kstar[i,:])))
         y_cov = Kstarstar - kstarT_k_kstar
-
         return y_mean, y_cov
 
     def predict_Gdot(self, time, y, a):
+        """
+            Predition of the Gaussian process Gdot(t), the derivative of G(t)
+        Parameters:
+            time = values where the predictive distribution will be calculated
+            y = values of the dependent variable (the measurements)
+            a = array with the kernel parameters
+        Returns:
+            mean vector, covariance matrix
+        """
         tstar = time[:, None] - self.t[None, :]
         kpars = self._kernel_pars(a)
         K = self._kernel_matrix(self.ddKdt2dt1(*kpars), self.t)
@@ -359,108 +386,128 @@ class BIGgp(object):
         for i, e in enumerate(time):
             kstarT_k_kstar.append(np.dot(Kstar, cho_solve(L1, Kstar[i,:])))
         y_cov = Kstarstar - kstarT_k_kstar
-
         return y_mean, y_cov
 
 
     def predict_rv(self, time, a):
+        """ Conditional predictive distribution for the RVs
+        Parameters:
+            time = values where the predictive distribution will be calculated
+            y = values of the dependent variable (the measurements)
+            a = array with the kernel parameters
+        Returns:
+            mean vector, covariance matrix, standard deviation vector
+        """
         mu, cov = self.predict_G(time, self.rv, a)
         mudot, covdot = self.predict_Gdot(time, self.rv, a)
-
         vc, vr, lc, bc, br = self._scaling_pars(a)
         mean = vc*mu + vr*mudot
         covariance = vc*cov + vr*covdot
         std = np.sqrt(np.diag(covariance))
-        return mean, std
+        return mean, covariance, std
+
 
     def predict_rhk(self, time, a):
+        """ Conditional predictive distribution for the log(R_hk)
+        Parameters:
+            time = values where the predictive distribution will be calculated
+            y = values of the dependent variable (the measurements)
+            a = array with the kernel parameters
+        Returns:
+            mean vector, covariance matrix, standard deviation vector
+        """
         mu, cov = self.predict_G(time, self.rhk, a)
-
         vc, vr, lc, bc, br = self._scaling_pars(a)
         mean = lc*mu
         covariance = lc*cov 
         std = np.sqrt(np.diag(covariance))
-        return mean, std
+        return mean, covariance, std
+
 
     def predict_bis(self, time, a):
+        """ Conditional predictive distribution for the BIS
+        Parameters:
+            time = values where the predictive distribution will be calculated
+            y = values of the dependent variable (the measurements)
+            a = array with the kernel parameters
+        Returns:
+            mean vector, covariance matrix, standard deviation vector
+        """
         mu, cov = self.predict_G(time, self.bis, a)
         mudot, covdot = self.predict_Gdot(time, self.bis, a)
-
         vc, vr, lc, bc, br = self._scaling_pars(a)
         mean = bc*mu + br*mudot
         covariance = bc*cov + br*covdot
         std = np.sqrt(np.diag(covariance))
-        return mean, std
+        return mean, covariance, std
 
 
     def show_matrix(self, x):
-        """ Plot of the covariance matrices """
+        """ Plot of the covariance matrix x 
+        Parameters:
+            x = matrix
+        Returns
+            Matrix plot
+        """
         plt.figure()
         plt.imshow(x)
         plt.show()
 
 
-    def draw_from_gp(self, time, a, model = 'rv', nugget = False):
-        kpars = self._kernel_pars(a)
-        nugget_value = 0.01
-        #gives the covariance matrix made with self.kernel, not what we want
-        #covG = self._kernel_matrix(self.kernel(*kpars), self.t)
-
-        if model == 'rv':
-            print('Working with RVs')
-            cov = self.k11(a, self.t) + self.rverr**2 * np.identity(self.t.size)
-            L1 = cho_factor(cov)
-            sol = cho_solve(L1, self.rv)
-
-        if model == 'rhk':
-            print('Working with log(Rhk)')
-            cov = self.k22(a, self.t) + self.sig_rhk**2 * np.identity(self.t.size)
-            if nugget:
-                cov = (1 - nugget_value)*cov + nugget_value*np.diag(np.diag(cov))
-            L1 = cho_factor(cov)
-            sol = cho_solve(L1, self.rhk)
-
-        if model == 'bis':
-            print('Working with BIS')
-            cov = self.k33(a, self.t) + self.sig_bis**2 * np.identity(self.t.size)
-            if nugget:
-                cov = (1 - nugget_value)*cov + nugget_value*np.diag(np.diag(cov))
-            L1 = cho_factor(cov)
-            sol = cho_solve(L1, self.bis)
-
-        k = cov
-        kernel = self.kernel(*kpars)
-        new_r = time[:, None] - self.t[None, :]
-        kstar = kernel(new_r)
-        kfinal = np.vstack([k , kstar])
-
-        new_r = time[:,None] - time[None,:]
-        kstarstar = kernel(new_r)
-#        print(kstarstar)
-#        plt.figure()
-#        plt.imshow(kstarstar)
-#        plt.show()
-
-        #kfinal =
-        #[  k   k*.T ]
-        #[  k*  k**  ]
-        kcolumns = np.vstack([kstar.T, kstarstar])
-        kfinal = np.hstack([kfinal, kcolumns])
-
-        y_mean=[] #mean = K*.K-1.y
-        for i, e in enumerate(time):
-            y_mean.append(np.dot(kstar[i,:], sol))
-
-        #cov =  K** - K*.K-1.K*.T
-        y_cov =[]
-        for i, e in enumerate(time):
-            #K**=diag[i]; K*=kstar[i]
-            kstarT_k_kstar = np.dot(kstar, cho_solve(L1, kstar[i,:]))
-            y_cov.append(kstarstar - kstarT_k_kstar) #+ 1e-12 * np.identity(time.size)
-
-        y_var = np.diag(y_cov) #variance
-        y_std = np.sqrt(y_var) #standard deviation
-        return y_mean, y_cov, y_var, y_std, cov
+#    def draw_from_gp(self, time, a, model = 'rv'):
+#        kpars = self._kernel_pars(a)
+#        #gives the covariance matrix made with self.kernel, not what we want
+#        #covG = self._kernel_matrix(self.kernel(*kpars), self.t)
+#
+#        if model == 'rv':
+#            print('Working with RVs')
+#            cov = self.k11(a, self.t) + self.rverr**2 * np.identity(self.t.size)
+#            L1 = cho_factor(cov)
+#            sol = cho_solve(L1, self.rv)
+#
+#        if model == 'rhk':
+#            print('Working with log(Rhk)')
+#            cov = self.k22(a, self.t) + self.sig_rhk**2 * np.identity(self.t.size)
+#            L1 = cho_factor(cov)
+#            sol = cho_solve(L1, self.rhk)
+#
+#        if model == 'bis':
+#            print('Working with BIS')
+#            cov = self.k33(a, self.t) + self.sig_bis**2 * np.identity(self.t.size)
+#            L1 = cho_factor(cov)
+#            sol = cho_solve(L1, self.bis)
+#
+#        k = cov
+#        kernel = self.kernel(*kpars)
+#        new_r = time[:, None] - self.t[None, :]
+#        kstar = kernel(new_r)
+#        kfinal = np.vstack([k , kstar])
+#
+#        new_r = time[:,None] - time[None,:]
+#        kstarstar = kernel(new_r)
+#
+#        #kfinal =
+#        #[  k   k*.T ]
+#        #[  k*  k**  ]
+#        kcolumns = np.vstack([kstar.T, kstarstar])
+#        kfinal = np.hstack([kfinal, kcolumns])
+#
+#        y_mean=[] #mean = K*.K-1.y
+#        for i, e in enumerate(time):
+#            y_mean.append(np.dot(kstar[i,:], sol))
+#
+#        #cov =  K** - K*.K-1.K*.T
+#        y_cov =[]
+#        for i, e in enumerate(time):
+#            #K**=diag[i]; K*=kstar[i]
+#            kstarT_k_kstar = np.dot(kstar[i,:], cho_solve(L1, kstar[i]))
+#            y_cov.append(kstarstar - kstarT_k_kstar) #+ 1e-12 * np.identity(time.size)
+#        y_cov = np.array(y_cov)
+#        #y_cov = y_cov[:,:,:]
+#        print(y_cov.shape)
+#        y_var = np.diag(y_cov) #variance
+#        y_std = np.sqrt(y_var) #standard deviation
+#        return y_mean, y_cov, y_var, y_std
 
 
 #Auxiliary functions
