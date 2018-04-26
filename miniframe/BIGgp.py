@@ -100,8 +100,8 @@ class BIGgp(object):
             l, vc, vr, lc, bc, br = a
             return [l]
         elif self.kernel.__name__ == 'QuasiPeriodic':
-            lp, le, p, vc, vr, lc, bc, br = a
-            return [lp, le, p]
+            lp, le, p, wn, vc, vr, lc, bc, br = a
+            return [lp, le, p, wn]
 
 
     @property
@@ -227,6 +227,7 @@ class BIGgp(object):
             nugget = True if K is not positive definite, False otherwise
         """ 
         print ('Vc:%.2f  Vr:%.2f  Lc:%.2f  Bc:%.2f  Br:%.2f' % tuple(self._scaling_pars(a)))
+        print ('le:%.2f  lp:%.2f  P:%.2f  WN:%.2f' % tuple(self._kernel_pars(a)))
         if yerr:
             diag1 = self.rverr**2 * np.identity(self.t.size)
             diag2 = self.sig_rhk**2 * np.identity(self.t.size)
@@ -369,7 +370,7 @@ class BIGgp(object):
         tstar = time[:, None] - self.t[None, :]
         kpars = self._kernel_pars(a)
         K = self._kernel_matrix(self.ddKdt2dt1(*kpars), self.t)
-        Kstar = self.kernel(*kpars)(tstar)
+        Kstar = self.ddKdt2dt1(*kpars)(tstar)
 
         try:
             L1 = cho_factor(K)
@@ -454,28 +455,50 @@ class BIGgp(object):
         plt.show()
 
 
-#    def draw_from_gp(self, time, a, model = 'rv'):
+    def draw_from_gp(self, time, a, model = 'rv'):
+        kpars = self._kernel_pars(a)
+        kernel = self.kernel(*kpars)
+        #gives the covariance matrix made with self.kernel, not what we want
+        #covG = self._kernel_matrix(self.kernel(*kpars), self.t)
+
+        if model == 'rv':
+            print('Working with RVs')
+            cov = self.k11(a, self.t)
+            L1 = cho_factor(cov)
+            sol = cho_solve(L1, self.rv)
+            Kstarstar = self.k11(a, time)
+        if model == 'rhk':
+            print('Working with log(Rhk)')
+            cov = self.k22(a, self.t)
+            L1 = cho_factor(cov)
+            sol = cho_solve(L1, self.rhk)
+            Kstarstar = self.k22(a, time)
+        if model == 'bis':
+            print('Working with BIS')
+            cov = self.k33(a, self.t)
+            L1 = cho_factor(cov)
+            sol = cho_solve(L1, self.bis)
+            Kstarstar = self.k33(a, time)
+        new_r = time[:, None] - self.t[None, :]
+        Kstar = kernel(new_r)
+        y_mean = np.dot(Kstar, sol)
+
+        new_r = time[:,None] - time[None,:]
+        Kstarstar = kernel(new_r)
+        kstarT_k_kstar = []
+        for i, e in enumerate(time):
+            kstarT_k_kstar.append(np.dot(Kstar, cho_solve(L1, Kstar[i,:])))
+        y_cov = Kstarstar - kstarT_k_kstar
+        y_var = np.diag(y_cov) #variance
+        y_std = np.sqrt(y_var) #standard deviation
+        return y_mean, y_cov, y_std
+
+#
 #        kpars = self._kernel_pars(a)
-#        #gives the covariance matrix made with self.kernel, not what we want
-#        #covG = self._kernel_matrix(self.kernel(*kpars), self.t)
+#        K =  self._kernel_matrix(self.kernel(*kpars), self.t)
+#        Kstar = self.kernel(*kpars)(tstar)
 #
-#        if model == 'rv':
-#            print('Working with RVs')
-#            cov = self.k11(a, self.t) + self.rverr**2 * np.identity(self.t.size)
-#            L1 = cho_factor(cov)
-#            sol = cho_solve(L1, self.rv)
 #
-#        if model == 'rhk':
-#            print('Working with log(Rhk)')
-#            cov = self.k22(a, self.t) + self.sig_rhk**2 * np.identity(self.t.size)
-#            L1 = cho_factor(cov)
-#            sol = cho_solve(L1, self.rhk)
-#
-#        if model == 'bis':
-#            print('Working with BIS')
-#            cov = self.k33(a, self.t) + self.sig_bis**2 * np.identity(self.t.size)
-#            L1 = cho_factor(cov)
-#            sol = cho_solve(L1, self.bis)
 #
 #        k = cov
 #        kernel = self.kernel(*kpars)
