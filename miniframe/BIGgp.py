@@ -457,7 +457,6 @@ class BIGgp(object):
 
     def draw_from_gp(self, time, a, model = 'rv'):
         kpars = self._kernel_pars(a)
-        kernel = self.kernel(*kpars)
         #gives the covariance matrix made with self.kernel, not what we want
         #covG = self._kernel_matrix(self.kernel(*kpars), self.t)
 
@@ -466,25 +465,34 @@ class BIGgp(object):
             cov = self.k11(a, self.t)
             L1 = cho_factor(cov)
             sol = cho_solve(L1, self.rv)
+            tstar = time[:, None] - self.t[None, :]
+            vc, vr, _, _, _ = self._scaling_pars(a)
+            Kstar = vc*vc*self.kernel(*kpars)(tstar) + vr*vr*self.ddKdt2dt1(*kpars)(tstar) \
+                    + vc*vr*(self.dKdt1(*kpars)(tstar) + self.dKdt2(*kpars)(tstar))
             Kstarstar = self.k11(a, time)
+
         if model == 'rhk':
             print('Working with log(Rhk)')
             cov = self.k22(a, self.t)
             L1 = cho_factor(cov)
             sol = cho_solve(L1, self.rhk)
+            tstar = time[:, None] - self.t[None, :]
+            _, _, lc, _, _ = self._scaling_pars(a)
+            Kstar = lc*lc*self.kernel(*kpars)(tstar)
             Kstarstar = self.k22(a, time)
+
         if model == 'bis':
             print('Working with BIS')
             cov = self.k33(a, self.t)
             L1 = cho_factor(cov)
             sol = cho_solve(L1, self.bis)
+            tstar = time[:, None] - self.t[None, :]
+            _, _, _, bc, br = self._scaling_pars(a)
+            Kstar = bc*bc*self.kernel(*kpars)(tstar) + br*br*self.ddKdt2dt1(*kpars)(tstar) \
+                    + bc*br*(self.dKdt1(*kpars)(tstar) + self.dKdt2(*kpars)(tstar))
             Kstarstar = self.k33(a, time)
-        new_r = time[:, None] - self.t[None, :]
-        Kstar = kernel(new_r)
-        y_mean = np.dot(Kstar, sol)
 
-        new_r = time[:,None] - time[None,:]
-        Kstarstar = kernel(new_r)
+        y_mean = np.dot(Kstar, sol)
         kstarT_k_kstar = []
         for i, e in enumerate(time):
             kstarT_k_kstar.append(np.dot(Kstar, cho_solve(L1, Kstar[i,:])))
