@@ -491,6 +491,52 @@ class BIGgp(object):
             Kstar = bc*bc*self.kernel(*kpars)(tstar) + br*br*self.ddKdt2dt1(*kpars)(tstar) \
                     + bc*br*(self.dKdt1(*kpars)(tstar) + self.dKdt2(*kpars)(tstar))
             Kstarstar = self.k33(a, time)
+#        if model == 'rv':
+#            print('Working with RVs')
+#            vc, vr, _, _, _ = self._scaling_pars(a)
+#            #cov = self.k11(a, self.t)
+#            times = self.t[:, None] - self.t[None, :]
+#            cov = vc*vc*self.kernel(*kpars)(times) + vr*vr*self.ddKdt2dt1(*kpars)(times) \
+#                    + vc*vr*(self.dKdt1(*kpars)(times) + self.dKdt2(*kpars)(times))
+#            L1 = cho_factor(cov)
+#            sol = cho_solve(L1, self.rv)
+#            tstar = time[:, None] - self.t[None, :]
+#            Kstar = vc*vc*self.kernel(*kpars)(tstar) + vr*vr*self.ddKdt2dt1(*kpars)(tstar) \
+#                    + vc*vr*(self.dKdt1(*kpars)(tstar) + self.dKdt2(*kpars)(tstar))
+#            times = time[:, None] - time[None, :]
+#            Kstarstar = vc*vc*self.kernel(*kpars)(times) + vr*vr*self.ddKdt2dt1(*kpars)(times) \
+#                    + vc*vr*(self.dKdt1(*kpars)(times) + self.dKdt2(*kpars)(times))
+#
+#        if model == 'rhk':
+#            print('Working with log(Rhk)')
+#            _, _, lc, _, _ = self._scaling_pars(a)
+#            #cov = self.k22(a, self.t)
+#            times = self.t[:, None] - self.t[None, :]
+#            cov = lc*lc*self.kernel(*kpars)(times)
+#            L1 = cho_factor(cov)
+#            sol = cho_solve(L1, self.rhk)
+#            tstar = time[:, None] - self.t[None, :]
+#            Kstar = lc*lc*self.kernel(*kpars)(tstar)
+#            times = time[:, None] - time[None, :]
+#            Kstarstar = lc*lc*self.kernel(*kpars)(times)
+#
+#        if model == 'bis':
+#            print('Working with BIS')
+#            _, _, _, bc, br = self._scaling_pars(a)
+#            #cov = self.k33(a, self.t)
+#            times = self.t[:, None] - self.t[None, :]
+#            cov = bc*bc*self.kernel(*kpars)(times) + br*br*self.ddKdt2dt1(*kpars)(times) \
+#                    + bc*br*(self.dKdt1(*kpars)(times) + self.dKdt2(*kpars)(times))
+#            L1 = cho_factor(cov)
+#            sol = cho_solve(L1, self.bis)
+#            tstar = time[:, None] - self.t[None, :]
+#            Kstar = bc*bc*self.kernel(*kpars)(tstar) + br*br*self.ddKdt2dt1(*kpars)(tstar) \
+#                    + bc*br*(self.dKdt1(*kpars)(tstar) + self.dKdt2(*kpars)(tstar))
+#            times = time[:, None] - time[None, :]
+#            Kstarstar = bc*bc*self.kernel(*kpars)(times) + br*br*self.ddKdt2dt1(*kpars)(times) \
+#                    + bc*br*(self.dKdt1(*kpars)(times) + self.dKdt2(*kpars)(times))
+
+
 
         y_mean = np.dot(Kstar, sol)
         kstarT_k_kstar = []

@@ -5,7 +5,7 @@ from miniframe.BIGgp import BIGgp
 from miniframe.BIGgp import isposdef
 from miniframe.BIGgp import scale
 from miniframe.means import Constant, Linear, Keplerian
-from time import time
+from time import time as tempo
 
 import numpy as np
 import emcee
@@ -17,7 +17,6 @@ from scipy import stats
 import sys
 #import _pickle as pickle
 plt.close('all')
-start_time = time()
 
 phase, flux, rv, bis = np.loadtxt("miniframe/datasets/1spot_soap.rdb",
                                   skiprows=2, unpack=True, 
@@ -57,8 +56,11 @@ time = np.linspace(0, 76, 1000)
 #a = [3947.411, 0.626, 23.584, 20096.503, 5.651e-5, 298.029, 4088.363, 16900.052]
 #a = [8.04, 19.71, 19.36, 0.43, 6.14, 11.58, 1.17, 6.67, 1465.29]
 #a = [1000, 1, 25.05, 0.01, 1, 1, 1, 1, 1]
+start = tempo()
 a = [5602.282, 1.243, 25.106, 0.215,
      65.875, 193.962, 1.633, 0.001, 4.299]
+
+
 mu1, cov1, std1 = gpObj.predict_rv(time, a)
 mu2, cov2, std2 = gpObj.predict_bis(time, a)
 mu3, cov3, std3 = gpObj.predict_rhk(time, a)
@@ -87,8 +89,10 @@ ax1.imshow(cov1)
 ax2.imshow(cov3)
 ax3.imshow(cov2)
 plt.show()
+end = tempo()
+print ("It took", end-start)
 
-
+start = tempo()
 a = [5602.282, 1.243, 25.106, 0.215,
      65.875, 193.962, 1.633, 0.001, 4.299]
 mu11, cov11, std11  = gpObj.draw_from_gp(time, a, model = 'rv')
@@ -119,3 +123,5 @@ ax1.imshow(cov11)
 ax2.imshow(cov33)
 ax3.imshow(cov22)
 plt.show()
+end = tempo()
+print ("It took", end-start)

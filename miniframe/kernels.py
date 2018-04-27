@@ -210,43 +210,67 @@ class QuasiPeriodic(kernel):
         ell_p = length scale of the periodic component
         period
     """
-    def __init__(self, ell_e, ell_p, period):
-        super(QuasiPeriodic, self).__init__(ell_e, ell_p, period)
-        self.ell_p = ell_p
+    def __init__(self, ell_e, ell_p, period, wn):
+        super(QuasiPeriodic, self).__init__(ell_e, ell_p, period, wn)
         self.ell_e = ell_e
+        self.ell_p = ell_p
         self.period = period
+        self.wn = wn
 
     def __call__(self, r):
-        f1 = r
-        f2 = self.ell_p**2
-        f3 = self.ell_e**2
-        f4 = self.period
-        
-        f5 = np.sin(pi*f1/f4)
-        return np.exp( -(2.0*f5*f5/f2) -0.5*f1*f1/f3 )
+        try: 
+            f1 = r
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
+            f5 = np.sin(pi*f1/f4)
+            fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return np.exp( -(2.0*f5*f5/f2) -0.5*f1*f1/f3 ) + fwn
 
+        except ValueError:
+            f1 = r
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
+            f5 = np.sin(pi*f1/f4)
+            return np.exp( -(2.0*f5*f5/f2) -0.5*f1*f1/f3 )
 
 class dQP_dt1(QuasiPeriodic):
     """ 
         Derivative of the QuasiPeriodic kernel, in order to t1.
     Equation A8 in the paper.
     """
-    def __init__(self, ell_e, ell_p, period):
-        super(dQP_dt1, self).__init__(ell_e, ell_p, period)
-        self.ell_p = ell_p
+    def __init__(self, ell_e, ell_p, period, wn):
+        super(dQP_dt1, self).__init__(ell_e, ell_p, period, wn)
         self.ell_e = ell_e
+        self.ell_p = ell_p
         self.period = period
+        self.wn = wn
 
     def __call__(self, r):
-        f1 = r
-        f2 = self.ell_p**2
-        f3 = self.ell_e**2
-        f4 = self.period
+        try:
+            f1 = r
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
 
-        f5 = np.sin(pi*f1/f4)
-        f6 = np.cos(pi*f1/f4)
-        f7 = np.exp( - 2.0*f5*f5/f2 - 0.5*f1*f1/f3 )
-        return (-(4*pi*f5*f6)/(f2*f4) -f1/f3) *f7 
+            f5 = np.sin(pi*f1/f4)
+            f6 = np.cos(pi*f1/f4)
+            f7 = np.exp( - 2.0*f5*f5/f2 - 0.5*f1*f1/f3 )
+            fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return (-(4*pi*f5*f6)/(f2*f4) -f1/f3) *f7 +fwn
+
+        except ValueError:
+            f1 = r
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
+
+            f5 = np.sin(pi*f1/f4)
+            f6 = np.cos(pi*f1/f4)
+            f7 = np.exp( - 2.0*f5*f5/f2 - 0.5*f1*f1/f3 )
+            fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return (-(4*pi*f5*f6)/(f2*f4) -f1/f3) *f7 
 
 
 class dQP_dt2(QuasiPeriodic):
@@ -254,22 +278,35 @@ class dQP_dt2(QuasiPeriodic):
         Derivative of the QuasiPeriodic kernel, in order to t2.
     Equation A9 in the paper.
     """
-    def __init__(self, ell_e, ell_p, period):
-        super(dQP_dt2, self).__init__(ell_e, ell_p, period)
-        self.ell_p = ell_p
+    def __init__(self, ell_e, ell_p, period, wn):
+        super(dQP_dt2, self).__init__(ell_e, ell_p, period, wn)
         self.ell_e = ell_e
+        self.ell_p = ell_p
         self.period = period
+        self.wn = wn
 
     def __call__(self, r):
-        f1 = r
-        f2 = self.ell_p**2
-        f3 = self.ell_e**2
-        f4 = self.period
+        try:
+            f1 = r
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
 
-        f5 = np.sin(pi*f1/f4)
-        f6 = np.cos(pi*f1/f4)
-        f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f1/f3 )
-        return ((4*pi*f5*f6)/(f2*f4) +f1/f3) *f7 
+            f5 = np.sin(pi*f1/f4)
+            f6 = np.cos(pi*f1/f4)
+            f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f1/f3 )
+            fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return ((4*pi*f5*f6)/(f2*f4) +f1/f3) *f7 +fwn
+        except:
+            f1 = r
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
+
+            f5 = np.sin(pi*f1/f4)
+            f6 = np.cos(pi*f1/f4)
+            f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f1/f3 )
+            return ((4*pi*f5*f6)/(f2*f4) +f1/f3) *f7 
 
 
 class ddQP_dt2dt1(QuasiPeriodic):
@@ -278,24 +315,41 @@ class ddQP_dt2dt1(QuasiPeriodic):
     one time in order to t1 and another in order to t2.
     Equation A10 in the paper.
     """
-    def __init__(self, ell_e, ell_p, period):
-        super(ddQP_dt2dt1, self).__init__(ell_e, ell_p, period)
-        self.ell_p = ell_p
+    def __init__(self, ell_e, ell_p, period, wn):
+        super(ddQP_dt2dt1, self).__init__(ell_e, ell_p, period, wn)
         self.ell_e = ell_e
+        self.ell_p = ell_p
         self.period = period
+        self.wn = wn
 
     def __call__(self, r):
-        f1 = r
-        f2 = self.ell_p**2
-        f3 = self.ell_e**2
-        f4 = self.period
+        try:
+            f1 = r
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
 
-        f5 = np.sin(pi*f1/f4)
-        f6 = np.cos(pi*f1/f4)
-        f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f1/f3 )
-        f8 = (-(4*pi*f5*f6)/(f2*f4) - f1/f3)
-        f9 = ((4*pi*f5*f6)/(f2*f4) + f1/f3) 
-        return (f8*f9 +1.0/f3 +4*pi*pi*f6*f6/(f2*f4*f4) \
+            f5 = np.sin(pi*f1/f4)
+            f6 = np.cos(pi*f1/f4)
+            f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f1/f3 )
+            f8 = (-(4*pi*f5*f6)/(f2*f4) - f1/f3)
+            f9 = ((4*pi*f5*f6)/(f2*f4) + f1/f3) 
+            
+            fwn=self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return (f8*f9 +1.0/f3 +4*pi*pi*f6*f6/(f2*f4*f4) \
+                                        -4*pi*pi*f5*f5/(f2*f4*f4)) *f7 + fwn
+
+        except ValueError:
+            f1 = r
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
+            f5 = np.sin(pi*f1/f4)
+            f6 = np.cos(pi*f1/f4)
+            f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f1/f3 )
+            f8 = (-(4*pi*f5*f6)/(f2*f4) - f1/f3)
+            f9 = ((4*pi*f5*f6)/(f2*f4) + f1/f3) 
+            return (f8*f9 +1.0/f3 +4*pi*pi*f6*f6/(f2*f4*f4) \
                                                 -4*pi*pi*f5*f5/(f2*f4*f4)) *f7
 
 
@@ -305,36 +359,62 @@ class dddQP_dt2ddt1(QuasiPeriodic):
     two times in order to t1t1 and one time in order t2.
     Equation A10 in the paper.
     """
-    def __init__(self, ell_e, ell_p, period):
-        super(dddQP_dt2ddt1, self).__init__(ell_e, ell_p, period)
-        self.ell_p = ell_p
+    def __init__(self, ell_e, ell_p, period, wn):
+        super(dddQP_dt2ddt1, self).__init__(ell_e, ell_p, period, wn)
         self.ell_e = ell_e
+        self.ell_p = ell_p
         self.period = period
+        self.wn = wn
 
     def __call__(self, r):
-        f1 = r
-        f11 = r**2
-        f2 = self.ell_p**2
-        f3 = self.ell_e**2
-        f4 = self.period
-        f44 = self.period**2
-        f444 = self.period**3
-
-        f5 = np.sin(pi*f1/f4)
-        f55 = np.sin(pi*f1/f4)**2
-        f6 = np.cos(pi*f1/f4)
-        f66 = np.cos(pi*f1/f4)**2
-        f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
-
-        j1 = -1/f3 -4*pi*pi*f66/(f2*f44) +4*pi*pi*f55/(f2*f44)
-        j2 = f1/f3 + 4*pi*f5*f5/(f2*f4)
-        j3 = (-j2)**2
-        j4 = j2
-        j5 = -j1
-        j6 = -j2
-        j8 = 16*pi*pi*pi*f6*f5/(f2*f444)
-
-        return (j1*j2 + j3*j4 + 2*j5*j6 - j8) *f7
+        try:
+            f1 = r
+            f11 = r**2
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
+            f44 = self.period**2
+            f444 = self.period**3
+    
+            f5 = np.sin(pi*f1/f4)
+            f55 = np.sin(pi*f1/f4)**2
+            f6 = np.cos(pi*f1/f4)
+            f66 = np.cos(pi*f1/f4)**2
+            f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
+    
+            j1 = -1/f3 -4*pi*pi*f66/(f2*f44) +4*pi*pi*f55/(f2*f44)
+            j2 = f1/f3 + 4*pi*f5*f5/(f2*f4)
+            j3 = (-j2)**2
+            j4 = j2
+            j5 = -j1
+            j6 = -j2
+            j8 = 16*pi*pi*pi*f6*f5/(f2*f444)
+            fwn=self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return (j1*j2 + j3*j4 + 2*j5*j6 - j8) *f7 + fwn
+        except ValueError:
+            f1 = r
+            f11 = r**2
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
+            f44 = self.period**2
+            f444 = self.period**3
+    
+            f5 = np.sin(pi*f1/f4)
+            f55 = np.sin(pi*f1/f4)**2
+            f6 = np.cos(pi*f1/f4)
+            f66 = np.cos(pi*f1/f4)**2
+            f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
+    
+            j1 = -1/f3 -4*pi*pi*f66/(f2*f44) +4*pi*pi*f55/(f2*f44)
+            j2 = f1/f3 + 4*pi*f5*f5/(f2*f4)
+            j3 = (-j2)**2
+            j4 = j2
+            j5 = -j1
+            j6 = -j2
+            j8 = 16*pi*pi*pi*f6*f5/(f2*f444)
+    
+            return (j1*j2 + j3*j4 + 2*j5*j6 - j8) *f7
 
 
 class dddQP_ddt2dt1(QuasiPeriodic):
@@ -343,36 +423,63 @@ class dddQP_ddt2dt1(QuasiPeriodic):
     one time in order to t1t1 and two times in order t2.
     Equation A10 in the paper.
     """
-    def __init__(self, ell_e, ell_p, period):
-        super(dddQP_ddt2dt1, self).__init__(ell_e, ell_p, period)
+    def __init__(self, ell_e, ell_p, period, wn):
+        super(dddQP_ddt2dt1, self).__init__(ell_e, ell_p, period, wn)
         self.ell_p = ell_p
         self.ell_e = ell_e
         self.period = period
+        self.wn = wn
 
     def __call__(self, r):
-        f1 = r
-        f11 = r**2
-        f2 = self.ell_p**2
-        f3 = self.ell_e**2
-        f4 = self.period
-        f44 = self.period**2
-        f444 = self.period**3
-        
-        f5 = np.sin(pi*f1/f4)
-        f55 = np.sin(pi*f1/f4)**2
-        f6 = np.cos(pi*f1/f4)
-        f66 = np.cos(pi*f1/f4)**2
-        f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
+        try:
+            f1 = r
+            f11 = r**2
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
+            f44 = self.period**2
+            f444 = self.period**3
+            
+            f5 = np.sin(pi*f1/f4)
+            f55 = np.sin(pi*f1/f4)**2
+            f6 = np.cos(pi*f1/f4)
+            f66 = np.cos(pi*f1/f4)**2
+            f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
+    
+            j1 = -1/f3 -4*pi*pi*f66/(f2*f44) +4*pi*pi*f55/(f2*f44)
+            j2 = f1/f3 + 4*pi*f5*f5/(f2*f4)
+            j3 = (-j2)**2
+            j4 = j2
+            j5 = -j1
+            j6 = -j2
+            j8 = 16*pi*pi*pi*f6*f5/(f2*f444)
+            fwn=self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return -(j1*j2 + j3*j4 + 2*j5*j6 - j8) *f7 + fwn
 
-        j1 = -1/f3 -4*pi*pi*f66/(f2*f44) +4*pi*pi*f55/(f2*f44)
-        j2 = f1/f3 + 4*pi*f5*f5/(f2*f4)
-        j3 = (-j2)**2
-        j4 = j2
-        j5 = -j1
-        j6 = -j2
-        j8 = 16*pi*pi*pi*f6*f5/(f2*f444)
-
-        return -(j1*j2 + j3*j4 + 2*j5*j6 - j8) *f7
+        except ValueError:
+            f1 = r
+            f11 = r**2
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
+            f44 = self.period**2
+            f444 = self.period**3
+            
+            f5 = np.sin(pi*f1/f4)
+            f55 = np.sin(pi*f1/f4)**2
+            f6 = np.cos(pi*f1/f4)
+            f66 = np.cos(pi*f1/f4)**2
+            f7 = np.exp( -(2.0*f55/f2) - 0.5*f11/f3 )
+    
+            j1 = -1/f3 -4*pi*pi*f66/(f2*f44) +4*pi*pi*f55/(f2*f44)
+            j2 = f1/f3 + 4*pi*f5*f5/(f2*f4)
+            j3 = (-j2)**2
+            j4 = j2
+            j5 = -j1
+            j6 = -j2
+            j8 = 16*pi*pi*pi*f6*f5/(f2*f444)
+    
+            return -(j1*j2 + j3*j4 + 2*j5*j6 - j8) *f7
 
 
 class ddddQP_ddt2ddt1(QuasiPeriodic):
@@ -381,42 +488,76 @@ class ddddQP_ddt2ddt1(QuasiPeriodic):
     two times in order to  t1 and two times in order to t2.
     Equation A6 in the paper, for N=1.
     """
-    def __init__(self, ell_e, ell_p, period):
-        super(ddddQP_ddt2ddt1, self).__init__(ell_e, ell_p, period)
+    def __init__(self, ell_e, ell_p, period, wn):
+        super(ddddQP_ddt2ddt1, self).__init__(ell_e, ell_p, period, wn)
         self.ell_p = ell_p
         self.ell_e = ell_e
         self.period = period
+        self.wn = wn
 
     def __call__(self, r):
-        f1 = r
-        f11 = r**2
-        f2 = self.ell_p**2
-        f3 = self.ell_e**2
-        f4 = self.period
-        f44 = self.period**2
-        f444 = self.period**3
-        f4444 = self.period**4
+        try:
+            f1 = r
+            f11 = r**2
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
+            f44 = self.period**2
+            f444 = self.period**3
+            f4444 = self.period**4
 
-        f5 = np.sin(pi*f1/f4)
-        f55 = np.sin(pi*f1/f4)**2
-        f6 = np.cos(pi*f1/f4)
-        f66 = np.cos(pi*f1/f4)**2
-        f7 = np.exp( -0.5*f11/f3 - 2*f55/f2)
+            f5 = np.sin(pi*f1/f4)
+            f55 = np.sin(pi*f1/f4)**2
+            f6 = np.cos(pi*f1/f4)
+            f66 = np.cos(pi*f1/f4)**2
+            f7 = np.exp( -0.5*f11/f3 - 2*f55/f2)
 
-        j1 = 1./f3 + 4*pi*pi*f66/(f2*f44) - 4*pi*pi*f55/(f2*f44)
-        j2 = -f1/f3 - 4*pi*f6*f5/(f2*f4)
-        j3 = f1/f3 + 4*pi*f6*f5/(f2*f4)
-        j4 = 32*pi*pi*pi*f6*f5*j3/(f2*f444)
-        j5 = 32*pi*pi*pi*f6*f5*j2/(f2*f444)
-        j6 = 16*pi*pi*pi*pi*f55/(f2*f4444)
-        j7 = 16*pi*pi*pi*pi*f66/(f2*f4444)
+            j1 = 1./f3 + 4*pi*pi*f66/(f2*f44) - 4*pi*pi*f55/(f2*f44)
+            j2 = -f1/f3 - 4*pi*f6*f5/(f2*f4)
+            j3 = f1/f3 + 4*pi*f6*f5/(f2*f4)
+            j4 = 32*pi*pi*pi*f6*f5*j3/(f2*f444)
+            j5 = 32*pi*pi*pi*f6*f5*j2/(f2*f444)
+            j6 = 16*pi*pi*pi*pi*f55/(f2*f4444)
+            j7 = 16*pi*pi*pi*pi*f66/(f2*f4444)
 
-        j8 = -j1
-        j9 = j3**2
-        j10 = j2**2
-        j11 = (-j1)**2
-        return (4*j1*j2*j3 -j4 +j5 -j6 +j7 +j8*j9 \
-                                            +j10*j9 +j8*j10 +j11 +2*j1**2) *f7
+            j8 = -j1
+            j9 = j3**2
+            j10 = j2**2
+            j11 = (-j1)**2
+            fwn=self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return (4*j1*j2*j3 -j4 +j5 -j6 +j7 +j8*j9 \
+                                            +j10*j9 +j8*j10 +j11 +2*j1**2) *f7 + fwn
+            
+        except ValueError:
+            f1 = r
+            f11 = r**2
+            f2 = self.ell_p**2
+            f3 = self.ell_e**2
+            f4 = self.period
+            f44 = self.period**2
+            f444 = self.period**3
+            f4444 = self.period**4
+    
+            f5 = np.sin(pi*f1/f4)
+            f55 = np.sin(pi*f1/f4)**2
+            f6 = np.cos(pi*f1/f4)
+            f66 = np.cos(pi*f1/f4)**2
+            f7 = np.exp( -0.5*f11/f3 - 2*f55/f2)
+    
+            j1 = 1./f3 + 4*pi*pi*f66/(f2*f44) - 4*pi*pi*f55/(f2*f44)
+            j2 = -f1/f3 - 4*pi*f6*f5/(f2*f4)
+            j3 = f1/f3 + 4*pi*f6*f5/(f2*f4)
+            j4 = 32*pi*pi*pi*f6*f5*j3/(f2*f444)
+            j5 = 32*pi*pi*pi*f6*f5*j2/(f2*f444)
+            j6 = 16*pi*pi*pi*pi*f55/(f2*f4444)
+            j7 = 16*pi*pi*pi*pi*f66/(f2*f4444)
+    
+            j8 = -j1
+            j9 = j3**2
+            j10 = j2**2
+            j11 = (-j1)**2
+            return (4*j1*j2*j3 -j4 +j5 -j6 +j7 +j8*j9 \
+                                                +j10*j9 +j8*j10 +j11 +2*j1**2) *f7
 
 
 ### END
