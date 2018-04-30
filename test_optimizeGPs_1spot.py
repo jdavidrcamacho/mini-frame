@@ -49,7 +49,7 @@ gpObj = BIGgp(kernels.QuasiPeriodic,[None,None, None] , t=t,
                   rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
 
 #### simple sample and marginalization with emcee
-runs, burns = 10000, 10000
+runs, burns = 30000, 30000
 #probabilistic model
 def logprob(p):
     if any([p[0] < np.log(1000), p[0] > 10, 
@@ -112,15 +112,16 @@ samples[:, 5] = np.exp(samples[:, 5])   #vr
 samples[:, 6] = np.exp(samples[:, 6])   #lc
 samples[:, 7] = np.exp(samples[:, 7])   #bc
 samples[:, 8] = np.exp(samples[:, 8])   #br
-##save data
-#pickle.dump(sampler.chain[:, :, 0],open("lp_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 1],open("le_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 2],open("P_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 3],open("vc_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 4],open("vr_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 5],open("lc_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 6],open("bc_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 7],open("br_1spot.p", 'wb'),protocol=-1)
+#save data
+pickle.dump(sampler.chain[:, :, 0],open("lp_1spot.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 1],open("le_1spot.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 2],open("P_1spot.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 3],open("wn_1spot.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 4],open("vc_1spot.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 5],open("vr_1spot.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 6],open("lc_1spot.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 7],open("bc_1spot.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 8],open("br_1spot.p", 'wb'),protocol=-1)
 
 ll1, ll2, pp, wnn, vcvc, vrvr, lclc, bcbc,brbr = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                              zip(*np.percentile(samples, [16, 50, 84],axis=0)))

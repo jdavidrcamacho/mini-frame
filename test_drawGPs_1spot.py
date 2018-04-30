@@ -8,13 +8,11 @@ from miniframe.means import Constant, Linear, Keplerian
 from time import time as tempo
 
 import numpy as np
-import emcee
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from scipy import stats
-#from scipy.stats import multivariate_normal
-import sys
+
 #import _pickle as pickle
 plt.close('all')
 
@@ -37,13 +35,6 @@ rvyerr = 0.05*rms_rv * np.ones(rv.size)
 bis_err = 0.10*rms_bis * np.ones(bis.size)
 sig_rhk = 0.20*rms_rhk * np.ones(rhk.size)
 
-#rand1 = 0.05*rms_rv*np.random.normal(0,1, t.size)
-#rand2 = 0.05*rms_bis*np.random.normal(0,1, t.size)
-#rand3 = 0.01*rms_rhk*np.random.normal(0,1, t.size)
-#rv = rv + rand1
-#bis = bis + rand2
-#rhk = rhk + rand3
-
 
 y = np.hstack((rv,rhk,bis))
 yerr = np.hstack((rvyerr,sig_rhk,bis_err))
@@ -52,13 +43,13 @@ gpObj = BIGgp(kernels.QuasiPeriodic,[None,None, None] , t=t,
                   rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
 
 time = np.linspace(0, 76, 1000)
-#a = [ll1[0], ll2[0], pp[0], vcvc[0], vrvr[0], lclc[0], bcbc[0], brbr[0]]
-#a = [3947.411, 0.626, 23.584, 20096.503, 5.651e-5, 298.029, 4088.363, 16900.052]
-#a = [8.04, 19.71, 19.36, 0.43, 6.14, 11.58, 1.17, 6.67, 1465.29]
-#a = [1000, 1, 25.05, 0.01, 1, 1, 1, 1, 1]
 start = tempo()
-a = [5602.282, 1.243, 25.106, 0.215,
-     65.875, 193.962, 1.633, 0.001, 4.299]
+
+#a = [kernel le, kernel lp, kernel period, white noise, vc, vr, lc, bc, br]
+a = [1083.1091125670669, 1.215034890646895, 25.07312864134963, 0.031950873139068185,
+     6.064550597545819, 4.23391412490362, 
+     0.3552833092394814, 
+     12.807709071739335, 9.755026033334879]
 
 
 mu1, cov1, std1 = gpObj.predict_rv(time, a)
@@ -92,12 +83,11 @@ plt.show()
 end = tempo()
 print ("It took", end-start)
 
+
 start = tempo()
-a = [5602.282, 1.243, 25.106, 0.215,
-     65.875, 193.962, 1.633, 0.001, 4.299]
-mu11, cov11, std11  = gpObj.draw_from_gp(time, a, model = 'rv')
-mu22, cov22, std22  = gpObj.draw_from_gp(time, a, model = 'bis')
-mu33, cov33, std33  = gpObj.draw_from_gp(time, a, model = 'rhk')
+mu11, cov11, std11  = gpObj.predict_gp(time, a, model = 'rv')
+mu22, cov22, std22  = gpObj.predict_gp(time, a, model = 'bis')
+mu33, cov33, std33  = gpObj.predict_gp(time, a, model = 'rhk')
 
 f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
 ax1.set_title(' ')

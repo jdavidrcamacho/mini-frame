@@ -455,11 +455,17 @@ class BIGgp(object):
         plt.show()
 
 
-    def draw_from_gp(self, time, a, model = 'rv'):
+    def predict_gp(self, time, a, model = 'rv'):
+        """ Conditional predictive distribution of the Gaussian process
+        Parameters:
+            time = values where the predictive distribution will be calculated
+            y = values of the dependent variable (the measurements)
+            a = array with the kernel parameters
+            model = 'rv' or 'bis' or 'rhk' accordingly to the data we are using
+        Returns:
+            mean vector, covariance matrix, standard deviation vector
+        """
         kpars = self._kernel_pars(a)
-        #gives the covariance matrix made with self.kernel, not what we want
-        #covG = self._kernel_matrix(self.kernel(*kpars), self.t)
-
         if model == 'rv':
             print('Working with RVs')
             cov = self.k11(a, self.t)
@@ -470,7 +476,6 @@ class BIGgp(object):
             Kstar = vc*vc*self.kernel(*kpars)(tstar) + vr*vr*self.ddKdt2dt1(*kpars)(tstar) \
                     + vc*vr*(self.dKdt1(*kpars)(tstar) + self.dKdt2(*kpars)(tstar))
             Kstarstar = self.k11(a, time)
-
         if model == 'rhk':
             print('Working with log(Rhk)')
             cov = self.k22(a, self.t)
@@ -480,7 +485,6 @@ class BIGgp(object):
             _, _, lc, _, _ = self._scaling_pars(a)
             Kstar = lc*lc*self.kernel(*kpars)(tstar)
             Kstarstar = self.k22(a, time)
-
         if model == 'bis':
             print('Working with BIS')
             cov = self.k33(a, self.t)
@@ -491,52 +495,6 @@ class BIGgp(object):
             Kstar = bc*bc*self.kernel(*kpars)(tstar) + br*br*self.ddKdt2dt1(*kpars)(tstar) \
                     + bc*br*(self.dKdt1(*kpars)(tstar) + self.dKdt2(*kpars)(tstar))
             Kstarstar = self.k33(a, time)
-#        if model == 'rv':
-#            print('Working with RVs')
-#            vc, vr, _, _, _ = self._scaling_pars(a)
-#            #cov = self.k11(a, self.t)
-#            times = self.t[:, None] - self.t[None, :]
-#            cov = vc*vc*self.kernel(*kpars)(times) + vr*vr*self.ddKdt2dt1(*kpars)(times) \
-#                    + vc*vr*(self.dKdt1(*kpars)(times) + self.dKdt2(*kpars)(times))
-#            L1 = cho_factor(cov)
-#            sol = cho_solve(L1, self.rv)
-#            tstar = time[:, None] - self.t[None, :]
-#            Kstar = vc*vc*self.kernel(*kpars)(tstar) + vr*vr*self.ddKdt2dt1(*kpars)(tstar) \
-#                    + vc*vr*(self.dKdt1(*kpars)(tstar) + self.dKdt2(*kpars)(tstar))
-#            times = time[:, None] - time[None, :]
-#            Kstarstar = vc*vc*self.kernel(*kpars)(times) + vr*vr*self.ddKdt2dt1(*kpars)(times) \
-#                    + vc*vr*(self.dKdt1(*kpars)(times) + self.dKdt2(*kpars)(times))
-#
-#        if model == 'rhk':
-#            print('Working with log(Rhk)')
-#            _, _, lc, _, _ = self._scaling_pars(a)
-#            #cov = self.k22(a, self.t)
-#            times = self.t[:, None] - self.t[None, :]
-#            cov = lc*lc*self.kernel(*kpars)(times)
-#            L1 = cho_factor(cov)
-#            sol = cho_solve(L1, self.rhk)
-#            tstar = time[:, None] - self.t[None, :]
-#            Kstar = lc*lc*self.kernel(*kpars)(tstar)
-#            times = time[:, None] - time[None, :]
-#            Kstarstar = lc*lc*self.kernel(*kpars)(times)
-#
-#        if model == 'bis':
-#            print('Working with BIS')
-#            _, _, _, bc, br = self._scaling_pars(a)
-#            #cov = self.k33(a, self.t)
-#            times = self.t[:, None] - self.t[None, :]
-#            cov = bc*bc*self.kernel(*kpars)(times) + br*br*self.ddKdt2dt1(*kpars)(times) \
-#                    + bc*br*(self.dKdt1(*kpars)(times) + self.dKdt2(*kpars)(times))
-#            L1 = cho_factor(cov)
-#            sol = cho_solve(L1, self.bis)
-#            tstar = time[:, None] - self.t[None, :]
-#            Kstar = bc*bc*self.kernel(*kpars)(tstar) + br*br*self.ddKdt2dt1(*kpars)(tstar) \
-#                    + bc*br*(self.dKdt1(*kpars)(tstar) + self.dKdt2(*kpars)(tstar))
-#            times = time[:, None] - time[None, :]
-#            Kstarstar = bc*bc*self.kernel(*kpars)(times) + br*br*self.ddKdt2dt1(*kpars)(times) \
-#                    + bc*br*(self.dKdt1(*kpars)(times) + self.dKdt2(*kpars)(times))
-
-
 
         y_mean = np.dot(Kstar, sol)
         kstarT_k_kstar = []
@@ -546,45 +504,6 @@ class BIGgp(object):
         y_var = np.diag(y_cov) #variance
         y_std = np.sqrt(y_var) #standard deviation
         return y_mean, y_cov, y_std
-
-#
-#        kpars = self._kernel_pars(a)
-#        K =  self._kernel_matrix(self.kernel(*kpars), self.t)
-#        Kstar = self.kernel(*kpars)(tstar)
-#
-#
-#
-#        k = cov
-#        kernel = self.kernel(*kpars)
-#        new_r = time[:, None] - self.t[None, :]
-#        kstar = kernel(new_r)
-#        kfinal = np.vstack([k , kstar])
-#
-#        new_r = time[:,None] - time[None,:]
-#        kstarstar = kernel(new_r)
-#
-#        #kfinal =
-#        #[  k   k*.T ]
-#        #[  k*  k**  ]
-#        kcolumns = np.vstack([kstar.T, kstarstar])
-#        kfinal = np.hstack([kfinal, kcolumns])
-#
-#        y_mean=[] #mean = K*.K-1.y
-#        for i, e in enumerate(time):
-#            y_mean.append(np.dot(kstar[i,:], sol))
-#
-#        #cov =  K** - K*.K-1.K*.T
-#        y_cov =[]
-#        for i, e in enumerate(time):
-#            #K**=diag[i]; K*=kstar[i]
-#            kstarT_k_kstar = np.dot(kstar[i,:], cho_solve(L1, kstar[i]))
-#            y_cov.append(kstarstar - kstarT_k_kstar) #+ 1e-12 * np.identity(time.size)
-#        y_cov = np.array(y_cov)
-#        #y_cov = y_cov[:,:,:]
-#        print(y_cov.shape)
-#        y_var = np.diag(y_cov) #variance
-#        y_std = np.sqrt(y_var) #standard deviation
-#        return y_mean, y_cov, y_var, y_std
 
 
 #Auxiliary functions
