@@ -464,20 +464,20 @@ class BIGgp(object):
             time = values where the predictive distribution will be calculated
             y = values of the dependent variable (the measurements)
             a = array with the kernel parameters
+            b = array with the means parameters
             model = 'rv' or 'bis' or 'rhk' accordingly to the data we are using
         Returns:
             mean vector, covariance matrix, standard deviation vector
         """
         kpars = self._kernel_pars(a)
 
-        #Gives parameters to the means
         self.mean_pars = b
         r = self.y - self.mean()
         t_size = len(self.t)
         r_rv = r[0:t_size]
         r_bis =r[t_size: 2*t_size]
         r_rhk =r[2*t_size:]
-        #r = self.y - self.mean()
+
         if model == 'rv':
             print('Working with RVs')
             cov = self.k11(a, self.t)
