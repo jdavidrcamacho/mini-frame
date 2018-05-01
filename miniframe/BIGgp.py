@@ -4,19 +4,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy.linalg import cho_factor, cho_solve, LinAlgError, eigh
-from scipy import stats
 from scipy.stats import multivariate_normal
 from copy import copy
 
 from miniframe.kernels import SquaredExponential
-from miniframe.means import *
 
 flatten = lambda l: [item for sublist in l for item in sublist]
 
 class BIGgp(object):
-    """ Big initial class to create our Gaussian process """
-    def __init__(self, 
-                 kernel, means, t, rv, rverr, bis, sig_bis, rhk, sig_rhk):
+    """
+    Big initial class to create our Gaussian process.
+    IMPORTANT DETAIL: Rajpaul et al. (2015) equations' order are RVs first,
+                    then log(R_hk), and the BIS.
+                    We made them RVs first, then BIS, and for last log(R_hk).
+    """
+    def __init__(self, kernel, means, t, 
+                 rv, rverr, bis, sig_bis, rhk, sig_rhk):
         self.kernel = kernel
 
         self.means = means
@@ -455,7 +458,7 @@ class BIGgp(object):
         plt.show()
 
 
-    def predict_gp(self, time, a, model = 'rv'):
+    def predict_gp(self, time, a, b, model = 'rv'):
         """ Conditional predictive distribution of the Gaussian process
         Parameters:
             time = values where the predictive distribution will be calculated
@@ -466,11 +469,21 @@ class BIGgp(object):
             mean vector, covariance matrix, standard deviation vector
         """
         kpars = self._kernel_pars(a)
+
+        #Gives parameters to the means
+        self.mean_pars = b
+        r = self.y - self.mean()
+        t_size = len(self.t)
+        r_rv = r[0:t_size]
+        r_bis =r[t_size: 2*t_size]
+        r_rhk =r[2*t_size:]
+        #r = self.y - self.mean()
         if model == 'rv':
             print('Working with RVs')
             cov = self.k11(a, self.t)
             L1 = cho_factor(cov)
-            sol = cho_solve(L1, self.rv)
+            #sol = cho_solve(L1, self.rv)
+            sol = cho_solve(L1, r_rv)
             tstar = time[:, None] - self.t[None, :]
             vc, vr, _, _, _ = self._scaling_pars(a)
             Kstar = vc*vc*self.kernel(*kpars)(tstar) + vr*vr*self.ddKdt2dt1(*kpars)(tstar) \
@@ -480,7 +493,8 @@ class BIGgp(object):
             print('Working with log(Rhk)')
             cov = self.k22(a, self.t)
             L1 = cho_factor(cov)
-            sol = cho_solve(L1, self.rhk)
+            #sol = cho_solve(L1, self.rhk)
+            sol = cho_solve(L1, r_rhk)
             tstar = time[:, None] - self.t[None, :]
             _, _, lc, _, _ = self._scaling_pars(a)
             Kstar = lc*lc*self.kernel(*kpars)(tstar)
@@ -489,7 +503,8 @@ class BIGgp(object):
             print('Working with BIS')
             cov = self.k33(a, self.t)
             L1 = cho_factor(cov)
-            sol = cho_solve(L1, self.bis)
+            #sol = cho_solve(L1, self.bis)
+            sol = cho_solve(L1, r_bis)
             tstar = time[:, None] - self.t[None, :]
             _, _, _, bc, br = self._scaling_pars(a)
             Kstar = bc*bc*self.kernel(*kpars)(tstar) + br*br*self.ddKdt2dt1(*kpars)(tstar) \
