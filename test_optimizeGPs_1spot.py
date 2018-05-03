@@ -49,13 +49,13 @@ gpObj = BIGgp(kernels.QuasiPeriodic,[None,None, None] , t=t,
                   rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
 
 #### simple sample and marginalization with emcee
-runs, burns = 30000, 30000
+runs, burns = 10000, 10000
 #probabilistic model
 def logprob(p):
     if any([p[0] < np.log(1000), p[0] > 10, 
             p[1] < -10, p[1] > np.log(10),
             p[2] < np.log(15), p[2] > np.log(35), 
-            p[3] < -10, p[3] > np.log(1),
+            p[3] < -10, p[3] > np.log(0.1),
 
             p[4] < -10, p[4] > np.log(100),
             p[5] < -10, p[5] > np.log(100),
@@ -73,7 +73,7 @@ def logprob(p):
 le_prior = stats.uniform(1000, np.exp(10) -1000) #from exp(-10) to 1
 lp_prior = stats.uniform(np.exp(-10), 10 -np.exp(-10)) #from exp(-10) to exp(10)
 p_prior = stats.uniform(15, 35-15) #from 15 to 35
-wn_prior = stats.uniform(np.exp(-10), 1 -np.exp(-10)) #from exp(-10) to exp(10)
+wn_prior = stats.uniform(np.exp(-10), 0.1 -np.exp(-10)) #from exp(-10) to exp(10)
 
 vc_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
 vr_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100

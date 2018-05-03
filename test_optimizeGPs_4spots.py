@@ -49,37 +49,38 @@ gpObj = BIGgp(kernels.QuasiPeriodic,[None,None, None] , t=t,
                   rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
 
 #### simple sample and marginalization with emcee
-runs, burns = 10000, 10000
+runs, burns = 20000, 20000
 #probabilistic model
 def logprob(p):
-    if any([p[0] < -10, p[0] > 10, 
-            p[1] < -10, p[1] > 10,
-            p[2] < np.log(10), p[2] > np.log(50), 
-            
-            p[3] < -10, p[3] > np.log(50),
-            p[4] < -10, p[4] > np.log(5000),
-            
-            p[5] < -10, p[5] > np.log(5000),
-            p[6] < -10, p[6] > np.log(5000),
-            p[7] < -10, p[7] > np.log(5000),
-            p[8] < -10, p[8] > np.log(5000),]):
+    if any([p[0] < np.log(1000), p[0] > 10, 
+            p[1] < -10, p[1] > np.log(10),
+            p[2] < np.log(15), p[2] > np.log(35), 
+            p[3] < -10, p[3] > np.log(1),
+
+            p[4] < -10, p[4] > np.log(100),
+            p[5] < -10, p[5] > np.log(100),
+
+            p[6] < -10, p[6] > np.log(1),
+
+            p[7] < -10, p[7] > np.log(100),
+            p[8] < -10, p[8] > np.log(100),]):
         return -np.inf
     logprior = 0.0
     return logprior + gpObj.log_likelihood(np.exp(p), [])
 
 
 #prior from exp(-10) to exp(10)
-le_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #from exp(-10) to 1
-lp_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #from exp(-10) to exp(10)
-p_prior = stats.uniform(10, 50-10) #from 15 to 35
-wn_prior = stats.uniform(np.exp(-10), 10 -np.exp(-10)) #from exp(-10) to exp(10)
+le_prior = stats.uniform(1000, np.exp(10) -1000) #from exp(-10) to 1
+lp_prior = stats.uniform(np.exp(-10), 10 -np.exp(-10)) #from exp(-10) to exp(10)
+p_prior = stats.uniform(15, 35-15) #from 15 to 35
+wn_prior = stats.uniform(np.exp(-10), 1 -np.exp(-10)) #from exp(-10) to exp(10)
 
-vc_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 100
-vr_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 100
+vc_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
+vr_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
 
-lc_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 100
-bc_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 100
-br_prior = stats.uniform(np.exp(-10), 5000 -np.exp(-10)) #from exp(-10) to 100
+lc_prior = stats.uniform(np.exp(-10), 1 -np.exp(-10)) #from exp(-10) to 100
+bc_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
+br_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
 
 
 def from_prior():
@@ -112,14 +113,14 @@ samples[:, 6] = np.exp(samples[:, 6])   #lc
 samples[:, 7] = np.exp(samples[:, 7])   #bc
 samples[:, 8] = np.exp(samples[:, 8])   #br
 ##save data
-#pickle.dump(sampler.chain[:, :, 0],open("lp_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 1],open("le_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 2],open("P_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 3],open("vc_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 4],open("vr_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 5],open("lc_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 6],open("bc_1spot.p", 'wb'),protocol=-1)
-#pickle.dump(sampler.chain[:, :, 7],open("br_1spot.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 0],open("le_4spots.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 1],open("lp_4spots.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 2],open("P_4spots.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 3],open("vc_4spots.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 4],open("vr_4spots.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 5],open("lc_4spots.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 6],open("bc_4spots.p", 'wb'),protocol=-1)
+pickle.dump(sampler.chain[:, :, 7],open("br_4spots.p", 'wb'),protocol=-1)
 
 ll1, ll2, pp, wnn, vcvc, vrvr, lclc, bcbc,brbr = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                              zip(*np.percentile(samples, [16, 50, 84],axis=0)))

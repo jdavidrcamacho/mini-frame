@@ -2,18 +2,12 @@
 # -*- coding: utf-8 -*-
 from miniframe import kernels
 from miniframe.BIGgp import BIGgp
-from miniframe.BIGgp import isposdef
-from miniframe.BIGgp import scale
 from miniframe.means import Constant, Linear, Keplerian
 from time import time as tempo
 
 import numpy as np
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
-from scipy import stats
-
-#import _pickle as pickle
 plt.close('all')
 
 phase, flux, rv, bis = np.loadtxt("miniframe/datasets/1spot_soap.rdb",
@@ -50,38 +44,20 @@ a = [1083.1091125670669, 1.215034890646895, 25.07312864134963, 0.031950873139068
      6.064550597545819, 4.23391412490362, 
      0.3552833092394814, 
      12.807709071739335, 9.755026033334879]
-b = [0, 0, 0]
+#a = [7007.513548743503, 1.0226921706026995, 25.05465110454914, 0.5778395294007469,
+#     4.9704569197133965, 4.219512871079798, 
+#     0.3827768189302914, 
+#     5.711096223144502, 11.427452171937151]
+#a = [14986.7403965787, 1.8893002353788237, 25.05233528277538, 0.07207944027787755,
+#     21.746034894186458, 0.010853033462958014,
+#     0.0003587694052429295,
+#     0.03553003103967403, 17.973951017585645]
+#a = [6331.984038213745, 1.8033164648664974, 25.070884614456006, 0.06893529979875161,
+#     17.694209878440283, 0.06384752322598014,
+#     0.0009857564298580237, 
+#     0.3493800719825983, 25.298207575936242]
 
-#mu1, cov1, std1 = gpObj.predict_rv(time, a)
-#mu2, cov2, std2 = gpObj.predict_bis(time, a)
-#mu3, cov3, std3 = gpObj.predict_rhk(time, a)
-#
-#f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
-#ax1.set_title(' ')
-#ax1.fill_between(time, mu1+std1, mu1-std1, color="grey", alpha=0.5)
-#ax1.plot(time, mu1, "k--", alpha=1, lw=1.5)
-#ax1.plot(t,rv,"b.")
-#ax1.set_ylabel("RVs")
-#
-#ax2.fill_between(time, mu3+std3, mu3-std3, color="grey", alpha=0.5)
-#ax2.plot(time, mu3, "k--", alpha=1, lw=1.5)
-#ax2.plot(t,rhk,"b.")
-#ax2.set_ylabel("flux")
-#
-#ax3.fill_between(time, mu2+std2, mu2-std2, color="grey", alpha=0.5)
-#ax3.plot(time, mu2, "k--", alpha=1, lw=1.5)
-#ax3.plot(t,bis,"b.")
-#ax3.set_ylabel("BIS")
-#ax3.set_xlabel("time")
-#plt.show()
-#
-#f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey = True, sharex = True)
-#ax1.imshow(cov1)
-#ax2.imshow(cov3)
-#ax3.imshow(cov2)
-#plt.show()
-#end = tempo()
-#print ("It took", end-start)
+b = [0, 0, 0]
 
 
 start = tempo()
