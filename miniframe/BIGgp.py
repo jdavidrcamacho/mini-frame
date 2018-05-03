@@ -12,8 +12,13 @@ from miniframe.kernels import SquaredExponential
 flatten = lambda l: [item for sublist in l for item in sublist]
 
 class BIGgp(object):
-    """
-    Big initial class to create our Gaussian process.
+    """ Big initial class to create our Gaussian process.
+    Parameters:
+        kernel = kernel being used
+        means = list of means being used, None if model doesn't use it
+        t = time array
+        rv, ..., sig_rhk = data, datasets
+
     IMPORTANT DETAIL: Rajpaul et al. (2015) equations' order are RVs first,
                     then log(R_hk), and the BIS.
                     We made them RVs first, then BIS, and for last log(R_hk).
@@ -55,8 +60,7 @@ class BIGgp(object):
 
     @classmethod
     def from_rdb(cls, filename, kernel=SquaredExponential, **kwargs):
-        """ 
-        Create class from a .rdb file
+        """ Create class from a .rdb file
         Arguments:
             filename
             kernel (optional)
@@ -224,11 +228,13 @@ class BIGgp(object):
 
     def compute_matrix(self, a, yerr=True, nugget=False):
         """ Creates the big covariance matrix K, equations 24 in the paper 
-        Parameters
+        Parameters:
             a = array with the kernel parameters
             yerr = True if measurements dataset has errors, False otherwise
             nugget = True if K is not positive definite, False otherwise
-        """ 
+        Returns:
+            Big final matrix 
+        """
         print ('Vc:%.2f  Vr:%.2f  Lc:%.2f  Bc:%.2f  Br:%.2f' % tuple(self._scaling_pars(a)))
         print ('le:%.2f  lp:%.2f  P:%.2f  WN:%.2f' % tuple(self._kernel_pars(a)))
         if yerr:
@@ -329,8 +335,7 @@ class BIGgp(object):
 
 
     def predict_G(self, time, y, a):
-        """
-            Predition of the Gaussian process G(t)
+        """ Predition of the Gaussian process G(t)
         Parameters:
             time = values where the predictive distribution will be calculated
             y = values of the dependent variable (the measurements)
@@ -361,8 +366,7 @@ class BIGgp(object):
         return y_mean, y_cov
 
     def predict_Gdot(self, time, y, a):
-        """
-            Predition of the Gaussian process Gdot(t), the derivative of G(t)
+        """ Predition of the Gaussian process Gdot(t), the derivative of G(t)
         Parameters:
             time = values where the predictive distribution will be calculated
             y = values of the dependent variable (the measurements)
@@ -450,7 +454,7 @@ class BIGgp(object):
         """ Plot of the covariance matrix x 
         Parameters:
             x = matrix
-        Returns
+        Returns:
             Matrix plot
         """
         plt.figure()
