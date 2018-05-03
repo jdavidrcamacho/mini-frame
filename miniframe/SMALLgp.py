@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import numpy as np
+import matplotlib.pyplot as plt
 
 from scipy.linalg import cho_factor, cho_solve, LinAlgError
 from scipy.stats import multivariate_normal
@@ -9,6 +10,14 @@ from copy import copy
 flatten = lambda l: [item for sublist in l for item in sublist]
 
 class SMALLgp(object):
+    """ Initial class to create our Gaussian process.
+    Parameters:
+        kernel = kernel being used
+        means = list of means being used, None if model doesn't use it
+        number_models = number of datasets being fitted
+        t = time array
+        *args = datasets data
+    """ 
     def __init__(self, kernel,  means, number_models, t, *args):
         self.kernel = kernel #kernel and its derivatives
         self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, \
@@ -42,24 +51,24 @@ class SMALLgp(object):
 
 
     def _kernel_matrix(self, kernel, x):
-        """ returns the covariance matrix created by evaluating `kernel` at inputs x """
+        """ Returns the covariance matrix created by evaluating `kernel` at inputs x """
         r = x[:, None] - x[None, :]
         K = kernel(r)
         return K
 
 
     def _kernel_pars(self, a):
-        """ returns the kernel parameters """
+        """ Returns the kernel parameters """
         if self.kernel.__name__ == 'SquaredExponential':
             l = a[0]
             return [l]
         elif self.kernel.__name__ == 'QuasiPeriodic':
-            lp, le, p = a[:3]
-            return [lp, le, p]
+            lp, le, p, wn = a[:4]
+            return [lp, le, p, wn]
 
 
     def _scaling_pars(self, a, position):
-        """ This returns the the constants of a given model/equation """
+        """ Returns the constants of a given model/equation """
         if position == self.number_models:
             return a[-3*self.number_models+3*(position-1) :]
         return a[-3*self.number_models+3*(position-1) : -3*self.number_models+3*position]
@@ -84,7 +93,7 @@ class SMALLgp(object):
     @mean_pars.setter
     def mean_pars(self, pars):
         pars = list(pars)
-        assert len(pars) == self.mean_pars_size
+#        assert len(pars) == self.mean_pars_size
         self._mean_pars = copy(pars)
         for i, m in enumerate(self.means):
             if m is None: 
@@ -106,12 +115,19 @@ class SMALLgp(object):
 
 
     def _mean_vector(self, MeanModel, x):
-        """ returns the value of the mean function """
+        """ Returns the value of the mean function """
         return MeanModel(self.t)
 
 
     def kii(self, a, x, position):
-        """ Creates the diagonal matrices used to form the final matrix """
+        """ Creates the diagonal matrices used to create the big final matrix
+        Parameters:
+            a = array with the kernel parameters
+            x = time dataset
+            position = position this kernel will have in the final matrix
+        Return:
+            matrix
+        """ 
         kpars = self._kernel_pars(a)
         a1, a2, a3 = self._scaling_pars(a, position)
 
@@ -133,7 +149,17 @@ class SMALLgp(object):
 
 
     def kij(self, a, x, position1, position2):
-        """ Creates the remaining matrices used to form the final matrix """
+        """ Creates the remaining matrices used to create the big final matrix 
+        Parameters:
+            a = array with the kernel parameters
+            x = time dataset
+            position1, position2 = position this matrix will have in the final 
+                                    matrix, think of it as its lines and columns
+                                    position in the final matrix, see
+                                    compute_matrix() to understand it better
+        Return:
+            matrix
+        """ 
         kpars = self._kernel_pars(a)
         a1, a2, a3 = self._scaling_pars(a, position1)
         b1, b2, b3 = self._scaling_pars(a, position2)
@@ -156,7 +182,14 @@ class SMALLgp(object):
 
 
     def compute_matrix(self, a, yerr=True, nugget=False):
-        """ Creates the final covariance matrix """
+        """ Creates the big covariance matrix K
+        Parameters:
+            a = array with the kernel parameters
+            yerr = True if measurements dataset has errors, False otherwise
+            nugget = True if K is not positive definite, False otherwise
+        Returns:
+            Big final matrix 
+        """
         if yerr:
             diag = self.yerr
         else:
@@ -190,14 +223,12 @@ class SMALLgp(object):
 
     def log_likelihood(self, a, b, nugget = True):
         """ Calculates the marginal log likelihood. 
-        On it we consider the mean function to be zero.
-
         Parameters:
-            a = array with the scaling parameters
+            a = array with the kernel parameters
+            b = array with the mean functions parameters
             y = values of the dependent variable (the measurements)
-
         Returns:
-            marginal log likelihood
+            Marginal log likelihood
         """
         #calculate covariance matrix with kernel parameters a
         K = self.compute_matrix(a)
@@ -227,16 +258,72 @@ class SMALLgp(object):
         return np.allclose(K, K.T, atol=tol)
 
 
-    def sample(self, a):
-        mean = np.zeros_like(self.tt)
-        cov = self.compute_matrix(a)
-        norm = multivariate_normal(mean, cov, allow_singular=True)
-        return norm.rvs()
-
-
     def sample_from_G(self, t, a):
+        """ Sample from the gaussian process G(t)
+        Parameters:
+            a = array with the kernel parameters
+        Returns:
+            Sample vector
+        """
         kpars = self._kernel_pars(a)
         cov = self._kernel_matrix(self.kernel(*kpars), t)
 
         norm = multivariate_normal(np.zeros_like(t), cov)
         return norm.rvs()
+
+
+    def show_matrix(self, x):
+        """ Plot of the covariance matrix x 
+        Parameters:
+            x = matrix
+        Returns:
+            Matrix plot
+        """
+        plt.figure()
+        plt.imshow(x)
+        plt.show()
+
+
+    def predict_gp(self, time, a, b, model = 1):
+        """ Conditional predictive distribution of the Gaussian process
+        Parameters:
+            time = values where the predictive distribution will be calculated
+            y = values of the dependent variable (the measurements)
+            a = array with the kernel parameters
+            b = array with the mean functions parameters
+            model = 1,2,3,... accordingly to the data we are using, 1 represents
+                    the first dataset, 2 the second data, etc...
+        Returns:
+            mean vector, covariance matrix, standard deviation vector
+        """
+        print('Working with model {0}'.format(model))
+        kpars = self._kernel_pars(a)
+        a1, a2, a3 = self._scaling_pars(a, model)
+
+        self.mean_pars = b
+
+        y = np.concatenate(self.y, axis=0)
+        r = y - self.mean()
+        new_y = np.array_split(r, self.number_models)
+
+        cov = self.kii(a, self.t, model)
+        L1 = cho_factor(cov)
+        sol = cho_solve(L1, new_y[model-1])
+        tstar = time[:, None] - self.t[None, :]
+
+        Kstar = a1*a1*self.kernel(*kpars)(tstar) + a2*a2*self.ddKdt2dt1(*kpars)(tstar) \
+                + a3*a3*self.ddddKddt2ddt1(*kpars)(tstar) \
+                + a1*a2*(self.dKdt2(*kpars)(tstar) + self.dKdt1(*kpars)(tstar)) \
+                + a1*a3*(self.ddKdt2dt1(*kpars)(tstar) + self.ddKdt2dt1(*kpars)(tstar)) \
+                + a2*a3*(self.dddKddt2dt1(*kpars)(tstar) + self.dddKdt2ddt1(*kpars)(tstar))
+
+        Kstarstar = self.kii(a, time, model)
+        
+        y_mean = np.dot(Kstar, sol)
+        kstarT_k_kstar = []
+        for i, e in enumerate(time):
+            kstarT_k_kstar.append(np.dot(Kstar, cho_solve(L1, Kstar[i,:])))
+        y_cov = Kstarstar - kstarT_k_kstar
+        y_var = np.diag(y_cov) #variance
+        y_std = np.sqrt(y_var) #standard deviation
+        return y_mean, y_cov, y_std
