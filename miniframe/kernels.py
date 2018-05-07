@@ -267,7 +267,6 @@ class dQP_dt1(QuasiPeriodic):
             f5 = np.sin(pi*f1/f4)
             f6 = np.cos(pi*f1/f4)
             f7 = np.exp( - 2.0*f5*f5/f2 - 0.5*f1*f1/f3 )
-            fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
             return (-(4*pi*f5*f6)/(f2*f4) -f1/f3) *f7
 
 
@@ -295,7 +294,7 @@ class dQP_dt2(QuasiPeriodic):
             f7 = np.exp( -(2.0*f5*f5/f2) - 0.5*f1*f1/f3 )
             fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
             return ((4*pi*f5*f6)/(f2*f4) +f1/f3) *f7 +fwn
-        except:
+        except ValueError:
             f1 = r
             f2 = self.ell_p**2
             f3 = self.ell_e**2
