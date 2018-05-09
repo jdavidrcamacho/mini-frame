@@ -12,3 +12,4 @@
 from miniframe import BIGgp
 from miniframe import SMALLgp
 from miniframe import kernels
+from miniframe import means
