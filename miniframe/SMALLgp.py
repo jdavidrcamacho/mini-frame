@@ -16,9 +16,9 @@ class SMALLgp(object):
         means = list of means being used, None if model doesn't use it
         number_models = number of datasets being fitted
         t = time array
-        *args = datasets data
+        *args = datasets data, it should be given as data1, data1_error, ...
     """ 
-    def __init__(self, kernel,  means, number_models, t, *args):
+    def __init__(self, kernel,  means, t, *args):
         self.kernel = kernel #kernel and its derivatives
         self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, \
             self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
@@ -33,10 +33,10 @@ class SMALLgp(object):
         self._mean_pars = flatten(self._mean_pars)
 
         self.t = t #time
-        self.number_models = number_models #number of models/equations
+        self.number_models = len(means) #number of models/equations
         self.tt = np.tile(t, self.number_models) #"extended" time
 
-        self.args = args #the data, it should be given as [data1, data1_error, ...]
+        self.args = args #the data, it should be given as data1, data1_error, ...
         self.y = [] 
         self.yerr = []
         for i,j  in enumerate(args):
@@ -47,7 +47,7 @@ class SMALLgp(object):
         self.y = np.array(self.y)
         self.yerr = np.concatenate(self.yerr)
         #if everything goes ok then numbers of y lists = number of models
-        assert (i+1)/2 == number_models, 'Given data and number models dont match'
+        assert (i+1)/2 == self.number_models, 'Given data and number models dont match'
 
 
     def _kernel_matrix(self, kernel, x):
@@ -190,7 +190,6 @@ class SMALLgp(object):
         Returns:
             Big final matrix 
         """
-        print ('le:%.2f  lp:%.2f  P:%.2f  WN:%.2f' % tuple(self._kernel_pars(a)))
         if yerr:
             diag = self.yerr
         else:
@@ -327,3 +326,6 @@ class SMALLgp(object):
         y_var = np.diag(y_cov) #variance
         y_std = np.sqrt(y_var) #standard deviation
         return y_mean, y_cov, y_std
+
+
+### END

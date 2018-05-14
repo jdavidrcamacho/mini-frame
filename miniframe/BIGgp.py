@@ -553,3 +553,6 @@ def show_and_check(gp, a):
     plt.imshow(K)
     plt.show()
     return K, (k11, k21, k31), (k12, k22, k32), (k13, k23, k33)
+
+
+### END
