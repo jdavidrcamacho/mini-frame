@@ -115,7 +115,7 @@ class Cubic(MeanModel):
 
 class Sine(MeanModel):
     """ 
-    A sine mean function
+    A sinusoidal mean function
     m(t) = amplitude * sine(ang_freq * t + phase)
     """
     _parsize = 3
