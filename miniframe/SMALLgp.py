@@ -190,12 +190,13 @@ class SMALLgp(object):
         Returns:
             Big final matrix 
         """
+        print ('le:%.2f  lp:%.2f  P:%.2f  WN:%.2f' % tuple(self._kernel_pars(a)))
         if yerr:
             diag = self.yerr
         else:
             diag = 1e-12 * np.identity(self.t.size)
 
-        K_size = self.t.size*self.number_models     #size of the matrix
+        K_size = self.t.size * self.number_models     #size of the matrix
         K_start = np.zeros((K_size, K_size))        #initial "empty" matrix
         if self.number_models == 1:
             K = self.kii(a, self.t, position = 1) + diag
@@ -221,7 +222,7 @@ class SMALLgp(object):
         return K
 
 
-    def log_likelihood(self, a, b, nugget = True):
+    def log_likelihood(self, a, b, nugget = False):
         """ Calculates the marginal log likelihood. 
         Parameters:
             a = array with the kernel parameters
@@ -301,24 +302,23 @@ class SMALLgp(object):
         a1, a2, a3 = self._scaling_pars(a, model)
 
         self.mean_pars = b
-
         y = np.concatenate(self.y, axis=0)
-        r = y - self.mean()
-        new_y = np.array_split(r, self.number_models)
+        new_y = np.array_split(y - self.mean(), self.number_models)
 
         cov = self.kii(a, self.t, model)
         L1 = cho_factor(cov)
         sol = cho_solve(L1, new_y[model-1])
         tstar = time[:, None] - self.t[None, :]
 
-        Kstar = a1*a1*self.kernel(*kpars)(tstar) + a2*a2*self.ddKdt2dt1(*kpars)(tstar) \
+        Kstar = a1*a1*self.kernel(*kpars)(tstar) \
+                + a2*a2*self.ddKdt2dt1(*kpars)(tstar) \
                 + a3*a3*self.ddddKddt2ddt1(*kpars)(tstar) \
                 + a1*a2*(self.dKdt2(*kpars)(tstar) + self.dKdt1(*kpars)(tstar)) \
                 + a1*a3*(self.ddKdt2dt1(*kpars)(tstar) + self.ddKdt2dt1(*kpars)(tstar)) \
                 + a2*a3*(self.dddKddt2dt1(*kpars)(tstar) + self.dddKdt2ddt1(*kpars)(tstar))
 
         Kstarstar = self.kii(a, time, model)
-        
+
         y_mean = np.dot(Kstar, sol)
         kstarT_k_kstar = []
         for i, e in enumerate(time):

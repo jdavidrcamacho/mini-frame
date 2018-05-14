@@ -109,6 +109,8 @@ class BIGgp(object):
         elif self.kernel.__name__ == 'QuasiPeriodic':
             lp, le, p, wn, vc, vr, lc, bc, br = a
             return [lp, le, p, wn]
+#            lp, le, p, vc, vr, lc, bc, br = a
+#            return [lp, le, p]
 
 
     @property
@@ -235,8 +237,6 @@ class BIGgp(object):
         Returns:
             Big final matrix 
         """
-        print ('Vc:%.2f  Vr:%.2f  Lc:%.2f  Bc:%.2f  Br:%.2f' % tuple(self._scaling_pars(a)))
-        print ('le:%.2f  lp:%.2f  P:%.2f  WN:%.2f' % tuple(self._kernel_pars(a)))
         if yerr:
             diag1 = self.rverr**2 * np.identity(self.t.size)
             diag2 = self.sig_rhk**2 * np.identity(self.t.size)
@@ -263,7 +263,7 @@ class BIGgp(object):
         return K
 
 
-    def log_likelihood(self, a, b, nugget = True):
+    def log_likelihood(self, a, b, nugget = False):
         """ Calculates the marginal log likelihood. 
         Parameters:
             a = array with the kernel parameters
@@ -477,17 +477,14 @@ class BIGgp(object):
 
         self.mean_pars = b
         r = self.y - self.mean()
-        t_size = len(self.t)
-        r_rv = r[0:t_size]
-        r_bis =r[t_size: 2*t_size]
-        r_rhk =r[2*t_size:]
+        new_y = np.array_split(r, 3)
 
         if model == 'rv':
             print('Working with RVs')
             cov = self.k11(a, self.t)
             L1 = cho_factor(cov)
             #sol = cho_solve(L1, self.rv)
-            sol = cho_solve(L1, r_rv)
+            sol = cho_solve(L1, new_y[0])
             tstar = time[:, None] - self.t[None, :]
             vc, vr, _, _, _ = self._scaling_pars(a)
             Kstar = vc*vc*self.kernel(*kpars)(tstar) + vr*vr*self.ddKdt2dt1(*kpars)(tstar) \
@@ -498,7 +495,7 @@ class BIGgp(object):
             cov = self.k22(a, self.t)
             L1 = cho_factor(cov)
             #sol = cho_solve(L1, self.rhk)
-            sol = cho_solve(L1, r_rhk)
+            sol = cho_solve(L1, new_y[2])
             tstar = time[:, None] - self.t[None, :]
             _, _, lc, _, _ = self._scaling_pars(a)
             Kstar = lc*lc*self.kernel(*kpars)(tstar)
@@ -508,7 +505,7 @@ class BIGgp(object):
             cov = self.k33(a, self.t)
             L1 = cho_factor(cov)
             #sol = cho_solve(L1, self.bis)
-            sol = cho_solve(L1, r_bis)
+            sol = cho_solve(L1, new_y[1])
             tstar = time[:, None] - self.t[None, :]
             _, _, _, bc, br = self._scaling_pars(a)
             Kstar = bc*bc*self.kernel(*kpars)(tstar) + br*br*self.ddKdt2dt1(*kpars)(tstar) \
