@@ -113,6 +113,20 @@ class Cubic(MeanModel):
         return np.polyval(self.pars, t)
 
 
+class Sine(MeanModel):
+    """ 
+    A sine mean function
+    m(t) = amplitude * sine(ang_freq * t + phase)
+    """
+    _parsize = 3
+    def __init__(self, amp, w, phi):
+        super(Cubic, self).__init__(amp, w, phi)
+
+    @array_input
+    def __call__(self, t):
+        return self.pars[0] * np.sin(self.pars[1]*t + self.pars[2])
+
+
 class Keplerian(MeanModel):
     """
     Keplerian function
@@ -154,3 +168,6 @@ class Keplerian(MeanModel):
         nu = 2*np.arctan(np.sqrt((1+e)/(1-e))*np.tan(E0/2))
         RV = K*(e*np.cos(w)+np.cos(w+nu))
         return RV
+
+
+### END
