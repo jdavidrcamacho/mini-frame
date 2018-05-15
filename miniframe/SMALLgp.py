@@ -18,8 +18,9 @@ class SMALLgp(object):
         t = time array
         *args = datasets data, it should be given as data1, data1_error, ...
     """ 
-    def __init__(self, kernel,  means, t, *args):
+    def __init__(self, kernel, extrakernel, means, t, *args):
         self.kernel = kernel #kernel and its derivatives
+        self.extrakernel = extrakernel
         self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, \
             self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
 
@@ -58,13 +59,21 @@ class SMALLgp(object):
 
 
     def _kernel_pars(self, a):
-        """ Returns the kernel parameters """
+        """ Returns the kernel parameters, X(t) in Jones et al. (2017) """
         if self.kernel.__name__ == 'SquaredExponential':
             l = a[0]
             return [l]
         elif self.kernel.__name__ == 'QuasiPeriodic':
             lp, le, p, wn = a[:4]
             return [lp, le, p, wn]
+
+
+    def _extrakernel_pars(self,a):
+        """ Returns the extra kernel parameters, Z(t) in Jones et al. (2017) """
+# if kernel
+#    ver len(_kernel_pars)
+#    extrakernel_paras = a[len(_kernel_pars: a cenas consoante a kernel)]
+#    return [parameters]
 
 
     def _scaling_pars(self, a, position):
@@ -145,7 +154,11 @@ class SMALLgp(object):
         f2 = (a1*a2)*(gammadgg + gammagdg)
         f3 = (a1*a3)*(gammagddg + gammaddgg)
         f4 = (a2*a3)*(gammadgddg + gammaddgdg)
-        return f1 + f2 + f3 + f4
+        if self.extrakernel is None:
+            return f1 + f2 + f3 + f4
+        #f5 = a4**2 * extracov
+        #f5 = a4**2 * self.kernel
+        #return f1 + f2 + f3 + f4 + f5
 
 
     def kij(self, a, x, position1, position2):
@@ -221,7 +234,7 @@ class SMALLgp(object):
         return K
 
 
-    def log_likelihood(self, a, b, nugget = False):
+    def log_likelihood(self, a, b, nugget = True):
         """ Calculates the marginal log likelihood. 
         Parameters:
             a = array with the kernel parameters

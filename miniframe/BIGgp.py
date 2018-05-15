@@ -263,7 +263,7 @@ class BIGgp(object):
         return K
 
 
-    def log_likelihood(self, a, b, nugget = False):
+    def log_likelihood(self, a, b, nugget = True):
         """ Calculates the marginal log likelihood. 
         Parameters:
             a = array with the kernel parameters
