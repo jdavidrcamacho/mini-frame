@@ -106,7 +106,7 @@ class SMALLgp(object):
     @mean_pars.setter
     def mean_pars(self, pars):
         pars = list(pars)
-#        assert len(pars) == self.mean_pars_size
+        assert len(pars) == self.mean_pars_size
         self._mean_pars = copy(pars)
         for i, m in enumerate(self.means):
             if m is None: 
@@ -240,7 +240,7 @@ class SMALLgp(object):
         return K
 
 
-    def log_likelihood(self, a, b, c=[], nugget = True):
+    def log_likelihood(self, a, b=[], c=[], nugget = True):
         """ Calculates the marginal log likelihood. 
         Parameters:
             a = array with the kernel parameters
@@ -266,9 +266,9 @@ class SMALLgp(object):
         return log_like
 
 
-    def minus_log_likelihood(self, a, b, nugget = True):
+    def minus_log_likelihood(self, a, b=[], c=[], nugget = True):
         """ Equal to -log_likelihood(self, a, b, nugget = True) """
-        return - self.log_likelihood(a, b, nugget = True)
+        return - self.log_likelihood(a, b, c, nugget = True)
 
 
     def check_symmetry(self, a, tol=1e-10):
@@ -303,7 +303,7 @@ class SMALLgp(object):
         plt.show()
 
 
-    def predict_gp(self, time, a, b, model = 1):
+    def predict_gp(self, time, a, b=[], c=[], model = 1):
         """ Conditional predictive distribution of the Gaussian process
         Parameters:
             time = values where the predictive distribution will be calculated
@@ -323,7 +323,7 @@ class SMALLgp(object):
         y = np.concatenate(self.y, axis=0)
         new_y = np.array_split(y - self.mean(), self.number_models)
 
-        cov = self.kii(a, self.t, model)
+        cov = self.kii(a, c, self.t, model)
         L1 = cho_factor(cov)
         sol = cho_solve(L1, new_y[model-1])
         tstar = time[:, None] - self.t[None, :]
@@ -335,7 +335,9 @@ class SMALLgp(object):
                 + a1*a3*(self.ddKdt2dt1(*kpars)(tstar) + self.ddKdt2dt1(*kpars)(tstar)) \
                 + a2*a3*(self.dddKddt2dt1(*kpars)(tstar) + self.dddKdt2ddt1(*kpars)(tstar))
 
-        Kstarstar = self.kii(a, time, model)
+        #THINK ABOUT a4 and where to put it
+
+        Kstarstar = self.kii(a, c, time, model)
 
         y_mean = np.dot(Kstar, sol)
         kstarT_k_kstar = []
