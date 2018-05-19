@@ -61,19 +61,23 @@ class SMALLgp(object):
     def _kernel_pars(self, a):
         """ Returns the kernel parameters, X(t) in Jones et al. (2017) """
         if self.kernel.__name__ == 'SquaredExponential':
-            l = a[0]
+            l, wn = a[:2]
             return [l]
         elif self.kernel.__name__ == 'QuasiPeriodic':
             lp, le, p, wn = a[:4]
             return [lp, le, p, wn]
 
 
-    def _extrakernel_pars(self,a):
+    def _extrakernel_pars(self, c):
         """ Returns the extra kernel parameters, Z(t) in Jones et al. (2017) """
-# if kernel
-#    ver len(_kernel_pars)
-#    extrakernel_paras = a[len(_kernel_pars: a cenas consoante a kernel)]
-#    return [parameters]
+        if self.extrakernel is None:
+            return []
+        elif self.extrakernel.__name__ == 'SquaredExponential':
+            l = c[:2]
+            return [l]
+        elif self.extrakernel.__name__ == 'QuasiPeriodic':
+            lp, le, p, wn = c[:4]
+            return [lp, le, p, wn]
 
 
     def _scaling_pars(self, a, position):
@@ -128,7 +132,7 @@ class SMALLgp(object):
         return MeanModel(self.t)
 
 
-    def kii(self, a, x, position):
+    def kii(self, a, c, x, position):
         """ Creates the diagonal matrices used to create the big final matrix
         Parameters:
             a = array with the kernel parameters
@@ -138,7 +142,9 @@ class SMALLgp(object):
             matrix
         """ 
         kpars = self._kernel_pars(a)
+        extrakpars = self._extrakernel_pars(c)
         a1, a2, a3 = self._scaling_pars(a, position)
+        a4 = c[-self.number_models + position -1]
 
         gammagg  = self._kernel_matrix(self.kernel(*kpars), x)
         gammadgdg = self._kernel_matrix(self.ddKdt2dt1(*kpars), x)
@@ -157,8 +163,8 @@ class SMALLgp(object):
         if self.extrakernel is None:
             return f1 + f2 + f3 + f4
         #f5 = a4**2 * extracov
-        #f5 = a4**2 * self.kernel
-        #return f1 + f2 + f3 + f4 + f5
+        f5 = a4**2 * self._kernel_matrix(self.extrakernel(*extrakpars), x)
+        return f1 + f2 + f3 + f4 + f5
 
 
     def kij(self, a, x, position1, position2):
@@ -194,7 +200,7 @@ class SMALLgp(object):
         return f1 + f2 + f3 + f4
 
 
-    def compute_matrix(self, a, yerr=True, nugget=False):
+    def compute_matrix(self, a, c, yerr=True, nugget=False):
         """ Creates the big covariance matrix K
         Parameters:
             a = array with the kernel parameters
@@ -217,7 +223,7 @@ class SMALLgp(object):
             while j <= self.number_models:
                 for i in range(1, self.number_models+1):
                     if i == j:
-                        k = self.kii(a, self.t, position = i)
+                        k = self.kii(a, c, self.t, position = i)
                         K_start[(i-1)*self.t.size : i*self.t.size, (j-1)*self.t.size : j*self.t.size] = k
                         
                     else:
@@ -234,7 +240,7 @@ class SMALLgp(object):
         return K
 
 
-    def log_likelihood(self, a, b, nugget = True):
+    def log_likelihood(self, a, b, c=[], nugget = True):
         """ Calculates the marginal log likelihood. 
         Parameters:
             a = array with the kernel parameters
@@ -244,7 +250,7 @@ class SMALLgp(object):
             Marginal log likelihood
         """
         #calculate covariance matrix with kernel parameters a
-        K = self.compute_matrix(a)
+        K = self.compute_matrix(a, c)
         #calculate mean and residuals with mean parameters b
         yy = np.concatenate(self.y)
         self.mean_pars = b
