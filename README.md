@@ -1,7 +1,7 @@
 # mini-frame
 [![Build Status](https://travis-ci.org/jdavidrcamacho/mini-frame.svg?branch=master)](https://travis-ci.org/jdavidrcamacho/mini-frame)
 
-<img align="center" width="150" height="170" src="https://musingsonmath.files.wordpress.com/2011/04/gauss_portrait.jpg">
+<img align="left" width="150" height="170" src="https://musingsonmath.files.wordpress.com/2011/04/gauss_portrait.jpg">
 
 A implementation of the Gaussian process frameworks described on [Rajpaul et al. (2015)](https://academic.oup.com/mnras/article/452/3/2269/1079217) and [Jones et al. (2017)](https://arxiv.org/abs/1711.01318). 
 
@@ -30,5 +30,6 @@ BIGgp allows you to work with Rajpaul et al. (2015) framework, SMALLgp allows yo
 [emcee](http://dfm.io/emcee/current/)
 [matplotlib](https://matplotlib.org/)
 
-
+<p align="center">
 <img align="center" width="450" height="500" src="https://i.imgur.com/RFmLPld.png">
+</p>
