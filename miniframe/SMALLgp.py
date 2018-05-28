@@ -13,8 +13,8 @@ class SMALLgp(object):
     """ Initial class to create our Gaussian process.
     Parameters:
         kernel = kernel being used
+	extrakernel = Z(t) in Jones et al.
         means = list of means being used, None if model doesn't use it
-        number_models = number of datasets being fitted
         t = time array
         *args = datasets data, it should be given as data1, data1_error, ...
     """ 
@@ -245,6 +245,7 @@ class SMALLgp(object):
         Parameters:
             a = array with the kernel parameters
             b = array with the mean functions parameters
+	    c = array with the extrakernel parameters
             y = values of the dependent variable (the measurements)
         Returns:
             Marginal log likelihood
