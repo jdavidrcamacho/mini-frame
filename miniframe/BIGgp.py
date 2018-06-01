@@ -104,10 +104,10 @@ class BIGgp(object):
     def _kernel_pars(self, a):
         """ Returns the kernel parameters """
         if self.kernel.__name__ == 'SquaredExponential':
-            l, vc, vr, lc, bc, br = a
-            return [l]
+            l, wn, _, _, _, _, _ = a
+            return [l, wn]
         elif self.kernel.__name__ == 'QuasiPeriodic':
-            lp, le, p, wn, vc, vr, lc, bc, br = a
+            lp, le, p, wn, _, _, _, _, _ = a
             return [lp, le, p, wn]
 #            lp, le, p, vc, vr, lc, bc, br = a
 #            return [lp, le, p]

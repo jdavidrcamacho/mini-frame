@@ -85,42 +85,63 @@ class SquaredExponential(kernel):
     Parameters:
         ell = length-scale, lambda in the paper
     """
-    def __init__(self, ell):
-        super(SquaredExponential, self).__init__(ell)
+    def __init__(self, ell, wn):
+        super(SquaredExponential, self).__init__(ell, wn)
         self.ell = ell
-    
+        self.wn = wn
+
     def __call__(self, r):
-        f1 = r**2
-        f2 = self.ell**2
-        return np.exp(-0.5 *f1/f2)
+        try:
+            f1 = r**2
+            f2 = self.ell**2
+            fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return np.exp(-0.5 *f1/f2) + fwn
+        except ValueError:
+            f1 = r**2
+            f2 = self.ell**2
+            return np.exp(-0.5 *f1/f2)
 
 
 class dSE_dt1(SquaredExponential):
     """ 
         Derivative of the SquaredExponential kernel in order to t1.
     """
-    def __init__(self, ell):
-        super(dSE_dt1, self).__init__(ell)
+    def __init__(self, ell, wn):
+        super(dSE_dt1, self).__init__(ell, wn)
         self.ell = ell
-    
+        self.wn = wn
+
     def __call__(self, r):
-        f1 = r
-        f2 = self.ell**2 
-        return -f1/f2 *np.exp(-0.5*f1*f1/f2)
+        try:
+            f1 = r
+            f2 = self.ell**2
+            fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return -f1/f2 *np.exp(-0.5*f1*f1/f2) + fwn
+        except ValueError:
+            f1 = r
+            f2 = self.ell**2 
+            return -f1/f2 *np.exp(-0.5*f1*f1/f2)
 
 
 class dSE_dt2(SquaredExponential):
     """
         Derivative of the SquaredExponential kernel in order to t2.
     """
-    def __init__(self, ell):
-        super(dSE_dt2, self).__init__(ell)
+    def __init__(self, ell, wn):
+        super(dSE_dt2, self).__init__(ell, wn)
         self.ell = ell
-    
+        self.wn = wn
+
     def __call__(self, r):
-        f1 = r
-        f2 = self.ell**2
-        return f1/f2 *np.exp(-0.5*f1*f1/f2)
+        try:
+            f1 = r
+            f2 = self.ell**2
+            fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return f1/f2 *np.exp(-0.5*f1*f1/f2) + fwn
+        except ValueError:
+            f1 = r
+            f2 = self.ell**2
+            return f1/f2 *np.exp(-0.5*f1*f1/f2)
 
 
 class ddSE_dt2dt1(SquaredExponential):
@@ -128,14 +149,21 @@ class ddSE_dt2dt1(SquaredExponential):
         Derivative of the SquaredExponential kernel, 
     one time in order to  t1 and another in order to t2.
     """
-    def __init__(self, ell):
-        super(ddSE_dt2dt1, self).__init__(ell)
+    def __init__(self, ell, wn):
+        super(ddSE_dt2dt1, self).__init__(ell, wn)
         self.ell = ell
+        self.wn = wn
 
     def __call__(self, r):
-        f1 = r**2
-        f2 = self.ell**2
-        return (1.0/f2 -f1/f2**2) *np.exp(-0.5*f1/f2)
+        try:
+            f1 = r**2
+            f2 = self.ell**2
+            fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return (1.0/f2 -f1/f2**2) *np.exp(-0.5*f1/f2) + fwn
+        except ValueError:
+            f1 = r**2
+            f2 = self.ell**2
+            return (1.0/f2 -f1/f2**2) *np.exp(-0.5*f1/f2)
 
 
 class dddSE_dt2ddt1(SquaredExponential):
@@ -143,18 +171,29 @@ class dddSE_dt2ddt1(SquaredExponential):
         Derivative of the SquaredExponential kernel, 
     two times in order to  t1 and one in order to t2.
     """
-    def __init__(self, ell):
-        super(dddSE_dt2ddt1, self).__init__(ell)
+    def __init__(self, ell, wn):
+        super(dddSE_dt2ddt1, self).__init__(ell, wn)
         self.ell = ell
+        self.wn = wn
 
     def __call__(self, r):
-        f1 = r
-        f11 = r**2
-        f111 = r**3
-        f2 = self.ell**2
-        f22 = self.ell**4
-        f222 = self.ell**6
-        return (f111/f222 -3.0*f1/f22) *np.exp(-0.5*f11/f2)
+        try:
+            f1 = r
+            f11 = r**2
+            f111 = r**3
+            f2 = self.ell**2
+            f22 = self.ell**4
+            f222 = self.ell**6
+            fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return (f111/f222 -3.0*f1/f22) *np.exp(-0.5*f11/f2) + fwn
+        except ValueError:
+            f1 = r
+            f11 = r**2
+            f111 = r**3
+            f2 = self.ell**2
+            f22 = self.ell**4
+            f222 = self.ell**6
+            return (f111/f222 -3.0*f1/f22) *np.exp(-0.5*f11/f2)
 
 
 class dddSE_ddt2dt1(SquaredExponential):
@@ -163,18 +202,29 @@ class dddSE_ddt2dt1(SquaredExponential):
     one time in order to  t1 and two times in order to t2.
     Equation A6 in the paper, for N=1.
     """
-    def __init__(self, ell):
-        super(dddSE_ddt2dt1, self).__init__(ell)
+    def __init__(self, ell, wn):
+        super(dddSE_ddt2dt1, self).__init__(ell, wn)
         self.ell = ell
+        self.wn = wn
 
     def __call__(self, r):
-        f1 = r
-        f11 = r**2
-        f111 = r**3
-        f2 = self.ell**2
-        f22 = self.ell**4
-        f222 = self.ell**6
-        return (-f111/f222 +3.0*f1/f22) *np.exp(-0.5*f11/f2)
+        try:
+            f1 = r
+            f11 = r**2
+            f111 = r**3
+            f2 = self.ell**2
+            f22 = self.ell**4
+            f222 = self.ell**6
+            fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return (-f111/f222 +3.0*f1/f22) *np.exp(-0.5*f11/f2) + fwn
+        except ValueError:
+            f1 = r
+            f11 = r**2
+            f111 = r**3
+            f2 = self.ell**2
+            f22 = self.ell**4
+            f222 = self.ell**6
+            return (-f111/f222 +3.0*f1/f22) *np.exp(-0.5*f11/f2)
 
 
 class ddddSE_ddt2ddt1(SquaredExponential):
@@ -183,19 +233,29 @@ class ddddSE_ddt2ddt1(SquaredExponential):
     two times in order to  t1 and two times in order to t2.
     Equation A6 in the paper, for N=1.
     """
-    def __init__(self, ell):
-        super(ddddSE_ddt2ddt1, self).__init__(ell)
+    def __init__(self, ell, wn):
+        super(ddddSE_ddt2ddt1, self).__init__(ell, wn)
         self.ell = ell
+        self.wn = wn
 
     def __call__(self, r):
-        f1 = r**2
-        f11 = r**4
-        f2 = self.ell**2
-        f22 = self.ell**4
-        f222 = self.ell**6
-        f2222 = self.ell**8
-
-        return (f11/f2222 -6.0*f1/f222 +3.0/f22) *np.exp(-0.5*f1/f2)
+        try:
+            f1 = r**2
+            f11 = r**4
+            f2 = self.ell**2
+            f22 = self.ell**4
+            f222 = self.ell**6
+            f2222 = self.ell**8
+            fwn = self.wn**2 *np.diag(np.diag(np.ones_like(r)))
+            return (f11/f2222 -6.0*f1/f222 +3.0/f22) *np.exp(-0.5*f1/f2) + fwn
+        except ValueError:
+            f1 = r**2
+            f11 = r**4
+            f2 = self.ell**2
+            f22 = self.ell**4
+            f222 = self.ell**6
+            f2222 = self.ell**8
+            return (f11/f2222 -6.0*f1/f222 +3.0/f22) *np.exp(-0.5*f1/f2)
 
 
 # Quasi-periodic kernel
