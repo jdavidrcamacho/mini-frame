@@ -1,5 +1,6 @@
 # mini-frame
 [![Build Status](https://travis-ci.org/jdavidrcamacho/mini-frame.svg?branch=master)](https://travis-ci.org/jdavidrcamacho/mini-frame)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/jdavidrcamacho/mini-frame/blob/master/LICENSE)
 
 <img align="left" width="150" height="170" src="https://musingsonmath.files.wordpress.com/2011/04/gauss_portrait.jpg">
 
