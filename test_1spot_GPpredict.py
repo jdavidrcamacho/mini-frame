@@ -33,7 +33,7 @@ y = np.hstack((rv,rhk,bis))
 yerr = np.hstack((rvyerr,sig_rhk,bis_err))
 
 gpObj = BIGgp(kernels.QuasiPeriodic,[Constant, Constant, Constant] , t=t,
-                  rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
+                  rv=rv, rverr=rvyerr, rhk=rhk, sig_rhk=sig_rhk, bis=bis, sig_bis=bis_err)
 
 time = np.linspace(0, 76, 1000)
 #a = [kernel le, kernel lp, kernel period, white noise, vc, vr, lc, bc, br]
@@ -89,8 +89,11 @@ b = [0, 0, 0]
 
 start = tempo()
 mu11, cov11, std11  = gpObj.predict_gp(time, a, b, model = 'rv')
-mu22, cov22, std22  = gpObj.predict_gp(time, a, b, model = 'bis')
-mu33, cov33, std33  = gpObj.predict_gp(time, a, b, model = 'rhk')
+mu22, cov22, std22  = gpObj.predict_gp(time, a, b, model = 'rhk')
+mu33, cov33, std33  = gpObj.predict_gp(time, a, b, model = 'bis')
+end = tempo()
+print ("It took", end-start, 's')
+
 
 f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
 ax1.set_title(' ')
@@ -99,13 +102,13 @@ ax1.plot(time, mu11, "k--", alpha=1, lw=1.5)
 ax1.plot(t,rv,"b.")
 ax1.set_ylabel("RVs")
 
-ax2.fill_between(time, mu33+std33, mu33-std33, color="grey", alpha=0.5)
-ax2.plot(time, mu33, "k--", alpha=1, lw=1.5)
+ax2.fill_between(time, mu22+std22, mu22-std22, color="grey", alpha=0.5)
+ax2.plot(time, mu22, "k--", alpha=1, lw=1.5)
 ax2.plot(t,rhk,"b.")
 ax2.set_ylabel("flux")
 
-ax3.fill_between(time, mu22+std22, mu22-std22, color="grey", alpha=0.5)
-ax3.plot(time, mu22, "k--", alpha=1, lw=1.5)
+ax3.fill_between(time, mu33+std33, mu33-std33, color="grey", alpha=0.5)
+ax3.plot(time, mu33, "k--", alpha=1, lw=1.5)
 ax3.plot(t,bis,"b.")
 ax3.set_ylabel("BIS")
 ax3.set_xlabel("time")
@@ -116,5 +119,3 @@ plt.show()
 #ax2.imshow(cov33)
 #ax3.imshow(cov22)
 #plt.show()
-end = tempo()
-print ("It took", end-start, 's')

@@ -3,14 +3,12 @@
 from miniframe import kernels
 from miniframe.SMALLgp import SMALLgp
 from miniframe.means import Constant, Linear, Keplerian
+from time import time as tempo
 
 import numpy as np
-import emcee
-import matplotlib.pyplot as plt
-import _pickle as pickle
 
-from matplotlib.ticker import MaxNLocator
-from scipy import stats
+import matplotlib.pyplot as plt
+plt.close('all')
 
 phase, flux, rv, bis = np.loadtxt("/home/joaocamacho/GitHub/mini-frame/miniframe/datasets/1spot_soap.rdb",
                                   skiprows=2, unpack=True, 
@@ -37,29 +35,31 @@ sig_rhk = 0.20*rms_rhk * np.ones(rhk.size)
 #y = np.hstack((rv,rhk,bis))
 #yerr = np.hstack((rvyerr,sig_rhk,bis_err))
 
-gpObj = SMALLgp(kernels.QuasiPeriodic, None, [Constant, Constant, Constant], 
-                t, rv, rvyerr, bis, bis_err, rhk, sig_rhk)
+gpObj = SMALLgp(kernels.QuasiPeriodic, None, [None, None, None], 
+                t, rv, rvyerr, rhk, sig_rhk, bis, bis_err)
 
 time = np.linspace(0, 76, 1000)
 
-a = [13441.501457621176, 4.6483490473930615, 24.93669751950206, 0.0627314509883369,
-     1*47.97591574850945, 1*40.64966532128839, 0*46.59497137307535,
-     1*40.50786737356975, 1*61.789646806855565, 0*34.5895556069076,
-     1*38.95241617890942, 0*40.4588184754026, 0*43.47745123586486] 
+#a = [13441.501457621176, 4.6483490473930615, 24.93669751950206, 0.0627314509883369,
+#     1*47.97591574850945, 1*40.64966532128839, 0*46.59497137307535,
+#     1*40.50786737356975, 1*61.789646806855565, 0*34.5895556069076,
+#     1*38.95241617890942, 0*40.4588184754026, 0*43.47745123586486] 
 
 a = [1083.1091125670669, 1.215034890646895, 25.07312864134963, 0.031950873139068185,
      6.064550597545819, 4.23391412490362, 0,
      0.3552833092394814, 0, 0,
      12.807709071739335, 9.755026033334879, 0]
 
-b = [0, 0, 0]
+b = []
 c = [1, 1, 1,
      9,19,29]
 
-
+start = tempo()
 mu11, cov11, std11  = gpObj.predict_gp(time, a, b, c, model = 1)
 mu22, cov22, std22  = gpObj.predict_gp(time, a, b, c, model = 2)
 mu33, cov33, std33  = gpObj.predict_gp(time, a, b, c, model = 3)
+end = tempo()
+print ("It took", end-start, 's')
 
 f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
 ax1.set_title(' ')
@@ -68,13 +68,13 @@ ax1.plot(time, mu11, "k--", alpha=1, lw=1.5)
 ax1.plot(t,rv,"b.")
 ax1.set_ylabel("RVs")
 
-ax2.fill_between(time, mu33+std33, mu33-std33, color="grey", alpha=0.5)
-ax2.plot(time, mu33, "k--", alpha=1, lw=1.5)
+ax2.fill_between(time, mu22+std22, mu22-std22, color="grey", alpha=0.5)
+ax2.plot(time, mu22, "k--", alpha=1, lw=1.5)
 ax2.plot(t,rhk,"b.")
 ax2.set_ylabel("flux")
 
-ax3.fill_between(time, mu22+std22, mu22-std22, color="grey", alpha=0.5)
-ax3.plot(time, mu22, "k--", alpha=1, lw=1.5)
+ax3.fill_between(time, mu33+std33, mu33-std33, color="grey", alpha=0.5)
+ax3.plot(time, mu33, "k--", alpha=1, lw=1.5)
 ax3.plot(t,bis,"b.")
 ax3.set_ylabel("BIS")
 ax3.set_xlabel("time")
