@@ -17,14 +17,13 @@ class BIGgp(object):
         kernel = kernel being used
         means = list of means being used, None if model doesn't use it
         t = time array
-        rv, ..., sig_rhk = data, datasets
+        rv, ..., sig_bis = data, datasets
 
     IMPORTANT DETAIL: Rajpaul et al. (2015) equations' order are RVs first,
                     then log(R_hk), and the BIS.
-                    We made them RVs first, then BIS, and for last log(R_hk).
     """
     def __init__(self, kernel, means, t, 
-                 rv, rverr, bis, sig_bis, rhk, sig_rhk):
+                 rv, rverr, rhk, sig_rhk, bis, sig_bis):
         self.kernel = kernel
 
         self.means = means
@@ -36,17 +35,16 @@ class BIGgp(object):
             self._mean_pars.append(self.means[i].pars)
 
         self._mean_pars = flatten(self._mean_pars)
-        # self._mean_pars = np.concatenate(self._mean_pars)
 
         self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, \
             self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
-        self.t = t
-        self.rv = rv
+        self.t = t              #time
+        self.rv = rv            #radial velocity
         self.rverr = rverr
-        self.bis = bis
-        self.sig_bis = sig_bis
-        self.rhk = rhk
+        self.rhk = rhk          #activity index
         self.sig_rhk = sig_rhk
+        self.bis = bis          #bisector inverse slope
+        self.sig_bis = sig_bis
         self.L = 2
 
         self.y = np.concatenate([rv, bis, rhk])

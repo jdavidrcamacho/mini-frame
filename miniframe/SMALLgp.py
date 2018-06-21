@@ -346,8 +346,7 @@ class SMALLgp(object):
                 + a3*a3*self.ddddKddt2ddt1(*kpars)(tstar) \
                 + a1*a2*(self.dKdt2(*kpars)(tstar) + self.dKdt1(*kpars)(tstar)) \
                 + a1*a3*(self.ddKdt2dt1(*kpars)(tstar) + self.ddKdt2dt1(*kpars)(tstar)) \
-                + a2*a3*(self.dddKddt2dt1(*kpars)(tstar) + self.dddKdt2ddt1(*kpars)(tstar)) 
-                #+ extra?
+                + a2*a3*(self.dddKddt2dt1(*kpars)(tstar) + self.dddKdt2ddt1(*kpars)(tstar))
 
         Kstarstar = self.kii(a, c, time, model)
 
