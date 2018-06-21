@@ -483,7 +483,6 @@ class BIGgp(object):
             print('Working with RVs')
             cov = self.k11(a, self.t)
             L1 = cho_factor(cov)
-            #sol = cho_solve(L1, self.rv)
             sol = cho_solve(L1, new_y[0])
             tstar = time[:, None] - self.t[None, :]
             vc, vr, _, _, _ = self._scaling_pars(a)
@@ -494,7 +493,6 @@ class BIGgp(object):
             print('Working with log(Rhk)')
             cov = self.k22(a, self.t)
             L1 = cho_factor(cov)
-            #sol = cho_solve(L1, self.rhk)
             sol = cho_solve(L1, new_y[2])
             tstar = time[:, None] - self.t[None, :]
             _, _, lc, _, _ = self._scaling_pars(a)
@@ -504,7 +502,6 @@ class BIGgp(object):
             print('Working with BIS')
             cov = self.k33(a, self.t)
             L1 = cho_factor(cov)
-            #sol = cho_solve(L1, self.bis)
             sol = cho_solve(L1, new_y[1])
             tstar = time[:, None] - self.t[None, :]
             _, _, _, bc, br = self._scaling_pars(a)

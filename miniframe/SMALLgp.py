@@ -86,6 +86,10 @@ class SMALLgp(object):
             return a[-3*self.number_models+3*(position-1) :]
         return a[-3*self.number_models+3*(position-1) : -3*self.number_models+3*position]
 
+    def _scaling_extrapars(self, c, position):
+        """ Returns the constants of a Z(t) """
+        return c[-self.number_models+(position-1)]
+
 
     @property
     def mean_pars_size(self):
@@ -245,7 +249,7 @@ class SMALLgp(object):
         Parameters:
             a = array with the kernel parameters
             b = array with the mean functions parameters
-	    c = array with the extrakernel parameters
+            c = array with the extrakernel parameters
             y = values of the dependent variable (the measurements)
         Returns:
             Marginal log likelihood
@@ -311,6 +315,7 @@ class SMALLgp(object):
             y = values of the dependent variable (the measurements)
             a = array with the kernel parameters
             b = array with the mean functions parameters
+            c = array with the extrakernel parameters
             model = 1,2,3,... accordingly to the data we are using, 1 represents
                     the first dataset, 2 the second data, etc...
         Returns:
@@ -329,14 +334,20 @@ class SMALLgp(object):
         sol = cho_solve(L1, new_y[model-1])
         tstar = time[:, None] - self.t[None, :]
 
+#        if self.extrakernel is None:
+#            extra = 0
+#        else:
+#            extrakpars = self._extrakernel_pars(c)
+#            a4 = self._scaling_extrapars(c, model)
+#            extra = a4*a4*self.extrakernel(*extrakpars)(tstar)
+
         Kstar = a1*a1*self.kernel(*kpars)(tstar) \
                 + a2*a2*self.ddKdt2dt1(*kpars)(tstar) \
                 + a3*a3*self.ddddKddt2ddt1(*kpars)(tstar) \
                 + a1*a2*(self.dKdt2(*kpars)(tstar) + self.dKdt1(*kpars)(tstar)) \
                 + a1*a3*(self.ddKdt2dt1(*kpars)(tstar) + self.ddKdt2dt1(*kpars)(tstar)) \
-                + a2*a3*(self.dddKddt2dt1(*kpars)(tstar) + self.dddKdt2ddt1(*kpars)(tstar))
-
-        #THINK ABOUT a4 and where to put it
+                + a2*a3*(self.dddKddt2dt1(*kpars)(tstar) + self.dddKdt2ddt1(*kpars)(tstar)) 
+                #+ extra?
 
         Kstarstar = self.kii(a, c, time, model)
 
