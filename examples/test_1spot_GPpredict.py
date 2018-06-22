@@ -87,12 +87,20 @@ a = [1083.1091125670669, 1.215034890646895, 25.07312864134963, 0.031950873139068
 
 b = [0, 0, 0]
 
-start = tempo()
-mu11, cov11, std11  = gpObj.predict_gp(time, a, b, model = 'rv')
-mu22, cov22, std22  = gpObj.predict_gp(time, a, b, model = 'rhk')
-mu33, cov33, std33  = gpObj.predict_gp(time, a, b, model = 'bis')
-end = tempo()
-print ("It took", end-start, 's')
+i, trials = 0, 100
+times = []
+while i <= trials:
+    start = tempo()
+    mu11, cov11, std11  = gpObj.predict_gp(time, a, b, model = 'rv')
+    mu22, cov22, std22  = gpObj.predict_gp(time, a, b, model = 'rhk')
+    mu33, cov33, std33  = gpObj.predict_gp(time, a, b, model = 'bis')
+    end = tempo()
+    times.append(end-start)
+    print ("It took", end-start, 's')
+    i += 1
+
+print("Average time of the", trials, "trials =", 
+      np.mean(np.array(times)), 'seconds')
 
 
 f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)

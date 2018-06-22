@@ -13,7 +13,7 @@ import _pickle as pickle
 from matplotlib.ticker import MaxNLocator
 from scipy import stats
 
-phase, flux, rv, bis = np.loadtxt("/home/camacho/GitHub/mini-frame/miniframe/datasets/1spot_soap.rdb",
+phase, flux, rv, bis = np.loadtxt("/home/joaocamacho/GitHub/mini-frame/miniframe/datasets/1spot_soap.rdb",
                                   skiprows=2, unpack=True, 
                                   usecols=(0, 1, 2, 3))
 t = 25.05 * phase
@@ -39,7 +39,7 @@ sig_rhk = 0.20*rms_rhk * np.ones(rhk.size)
 #y = np.hstack((rv,rhk,bis))
 #yerr = np.hstack((rvyerr,sig_rhk,bis_err))
 
-gpObj = SMALLgp(kernels.QuasiPeriodic, kernels.QuasiPeriodic, [None, None, None], 
+gpObj = SMALLgp(kernels.QuasiPeriodic, None, [None, None, None], 
                 t, rv, rvyerr, bis, bis_err, rhk, sig_rhk)
 
 a = [1, 2, 3, 4,
@@ -47,7 +47,6 @@ a = [1, 2, 3, 4,
      2, 2, 2,
      1, 1, 1]
 b = []
-c = [1, 2, 3, 4,
-     1,1,1]
+c = []
 
 print(gpObj.log_likelihood(a, b, c))

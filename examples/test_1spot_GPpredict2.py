@@ -51,35 +51,43 @@ a = [1083.1091125670669, 1.215034890646895, 25.07312864134963, 0.031950873139068
      12.807709071739335, 9.755026033334879, 0]
 
 b = []
-c = [1, 1, 1,
-     9,19,29]
+c = [0, 0, 0,
+      0, 0, 0]
 
-start = tempo()
-mu11, cov11, std11  = gpObj.predict_gp(time, a, b, c, model = 1)
-mu22, cov22, std22  = gpObj.predict_gp(time, a, b, c, model = 2)
-mu33, cov33, std33  = gpObj.predict_gp(time, a, b, c, model = 3)
-end = tempo()
-print ("It took", end-start, 's')
+i, trials = 0, 100
+times = []
+while i <= trials:
+    start = tempo()
+    mu11, cov11, std11  = gpObj.predict_gp(time, a, b, c, model = 1)
+    mu22, cov22, std22  = gpObj.predict_gp(time, a, b, c, model = 2)
+    mu33, cov33, std33  = gpObj.predict_gp(time, a, b, c, model = 3)
+    end = tempo()
+    times.append(end-start)
+    print ("It took", end-start, 's')
+    i += 1
 
-f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
-ax1.set_title(' ')
-ax1.fill_between(time, mu11+std11, mu11-std11, color="grey", alpha=0.5)
-ax1.plot(time, mu11, "k--", alpha=1, lw=1.5)
-ax1.plot(t,rv,"b.")
-ax1.set_ylabel("RVs")
+print("Average time of the", trials, "trials =", 
+      np.mean(np.array(times)), 'seconds')
 
-ax2.fill_between(time, mu22+std22, mu22-std22, color="grey", alpha=0.5)
-ax2.plot(time, mu22, "k--", alpha=1, lw=1.5)
-ax2.plot(t,rhk,"b.")
-ax2.set_ylabel("flux")
-
-ax3.fill_between(time, mu33+std33, mu33-std33, color="grey", alpha=0.5)
-ax3.plot(time, mu33, "k--", alpha=1, lw=1.5)
-ax3.plot(t,bis,"b.")
-ax3.set_ylabel("BIS")
-ax3.set_xlabel("time")
-plt.show()
-
+#f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
+#ax1.set_title(' ')
+#ax1.fill_between(time, mu11+std11, mu11-std11, color="grey", alpha=0.5)
+#ax1.plot(time, mu11, "k--", alpha=1, lw=1.5)
+#ax1.plot(t,rv,"b.")
+#ax1.set_ylabel("RVs")
+#
+#ax2.fill_between(time, mu22+std22, mu22-std22, color="grey", alpha=0.5)
+#ax2.plot(time, mu22, "k--", alpha=1, lw=1.5)
+#ax2.plot(t,rhk,"b.")
+#ax2.set_ylabel("flux")
+#
+#ax3.fill_between(time, mu33+std33, mu33-std33, color="grey", alpha=0.5)
+#ax3.plot(time, mu33, "k--", alpha=1, lw=1.5)
+#ax3.plot(t,bis,"b.")
+#ax3.set_ylabel("BIS")
+#ax3.set_xlabel("time")
+#plt.show()
+#
 #f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey = True, sharex = True)
 #ax1.imshow(cov11)
 #ax2.imshow(cov33)
