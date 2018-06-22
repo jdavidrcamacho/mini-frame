@@ -47,8 +47,3 @@ BIGgp allows you to work with [Rajpaul et al. (2015)](https://academic.oup.com/m
 -------------------------
 
 
-<p align="center">
-<img align="center" width="450" height="500" src="https://i.imgur.com/RFmLPld.png">
-</p>
-
-
