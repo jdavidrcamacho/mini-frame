@@ -148,7 +148,10 @@ class SMALLgp(object):
         kpars = self._kernel_pars(a)
         extrakpars = self._extrakernel_pars(c)
         a1, a2, a3 = self._scaling_pars(a, position)
-        a4 = c[-self.number_models + position -1]
+        if self.extrakernel is None:
+            a4 = 0
+        else:
+            a4 = c[-self.number_models + position -1]
 
         gammagg  = self._kernel_matrix(self.kernel(*kpars), x)
         gammadgdg = self._kernel_matrix(self.ddKdt2dt1(*kpars), x)
@@ -221,7 +224,7 @@ class SMALLgp(object):
         K_size = self.t.size * self.number_models     #size of the matrix
         K_start = np.zeros((K_size, K_size))        #initial "empty" matrix
         if self.number_models == 1:
-            K = self.kii(a, self.t, position = 1) + diag
+            K = self.kii(a, c, self.t, position = 1) + diag
         else:
             j=1
             while j <= self.number_models:
