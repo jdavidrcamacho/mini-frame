@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from miniframe import kernels
-from miniframe.BIGgp import BIGgp
+from miniframe.BIGgp import BIGgp #importing Rajpaul et al. framework
 from miniframe.means import Constant, Linear, Keplerian
 
 import numpy as np
@@ -12,6 +12,7 @@ import _pickle as pickle
 from matplotlib.ticker import MaxNLocator
 from scipy import stats
 
+#Importing the data
 phase, flux, rv, bis = np.loadtxt("/home/joaocamacho/GitHub/mini-frame/miniframe/datasets/1spot_soap.rdb",
                                   skiprows=2, unpack=True, 
                                   usecols=(0, 1, 2, 3))
@@ -22,7 +23,6 @@ rv = 100*rv
 bis = 100*bis
 rhk = log_rhk
 flux = flux
-#plt.plot(t,rv,'.')
 
 rms_rv = np.sqrt((1./rv.size*np.sum(rv**2)))
 rms_bis = np.sqrt((1./bis.size*np.sum(bis**2)))
@@ -31,19 +31,18 @@ rvyerr = 0.05*rms_rv * np.ones(rv.size)
 bis_err = 0.10*rms_bis * np.ones(bis.size)
 sig_rhk = 0.20*rms_rhk * np.ones(rhk.size)
 
-#rv, rvyerr = scale(rv, rvyerr)
-#rhk, sig_rhk = scale(rhk,sig_rhk)
-#bis, bis_err = scale(bis,bis_err)
 
 y = np.hstack((rv,rhk,bis))
 yerr = np.hstack((rvyerr,sig_rhk,bis_err))
 
+#Making our GP object
 gpObj = BIGgp(kernels.QuasiPeriodic, [None,None, None] , t=t,
                   rv=rv, rverr=rvyerr, bis=bis, sig_bis=bis_err, rhk=rhk, sig_rhk=sig_rhk)
 
-#### simple sample and marginalization with emcee
-runs, burns = 20000, 20000
-#probabilistic model
+#Defining runs and burn-ins
+runs, burns = 1000, 1000
+
+#Probabilistic model
 def logprob(p):
     if any([p[0] < -10, p[0] > 10, 
             p[1] < -10, p[1] > np.log(10),
@@ -62,7 +61,7 @@ def logprob(p):
     return logprior + gpObj.log_likelihood(np.exp(p), [])
 
 
-#prior from exp(-10) to exp(10)
+#Setting the priors
 le_prior = stats.uniform(np.exp(-10), np.exp(10) -np.exp(-10)) #from exp(-10) to 1
 lp_prior = stats.uniform(np.exp(-10), 10 -np.exp(-10)) #from exp(-10) to exp(10)
 p_prior = stats.uniform(15, 35-15) #from 15 to 35
@@ -72,20 +71,20 @@ vc_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
 vr_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
 
 lc_prior = stats.uniform(np.exp(-10), 1 -np.exp(-10)) #from exp(-10) to 100
+
 bc_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
 br_prior = stats.uniform(np.exp(-10), 100 -np.exp(-10)) #from exp(-10) to 100
 
-
 def from_prior():
-    #[lp,le,p, vc,vr,lc,bc,br, P,k,e,w,t0, const,const]
     return np.array([ le_prior.rvs(), lp_prior.rvs(), p_prior.rvs(), wn_prior.rvs(),
                     vc_prior.rvs(), vr_prior.rvs(), lc_prior.rvs(), 
                     bc_prior.rvs(), br_prior.rvs()])
 
-#Set up the sampler.
+#Setingt up the sampler
 nwalkers, ndim = 2*9, 9
 sampler = emcee.EnsembleSampler(nwalkers, ndim, logprob, threads= 4)
-#Initialize the walkers.
+
+#Initialize the walkers
 p0=[np.log(from_prior()) for i in range(nwalkers)]
 
 print("Running burn-in")
@@ -105,7 +104,8 @@ samples[:, 5] = np.exp(samples[:, 5])   #vr
 samples[:, 6] = np.exp(samples[:, 6])   #lc
 samples[:, 7] = np.exp(samples[:, 7])   #bc
 samples[:, 8] = np.exp(samples[:, 8])   #br
-#save data
+
+#saving the  data
 pickle.dump(sampler.chain[:, :, 0],open("lp_1spot.p", 'wb'),protocol=-1)
 pickle.dump(sampler.chain[:, :, 1],open("le_1spot.p", 'wb'),protocol=-1)
 pickle.dump(sampler.chain[:, :, 2],open("P_1spot.p", 'wb'),protocol=-1)
@@ -116,9 +116,12 @@ pickle.dump(sampler.chain[:, :, 6],open("lc_1spot.p", 'wb'),protocol=-1)
 pickle.dump(sampler.chain[:, :, 7],open("bc_1spot.p", 'wb'),protocol=-1)
 pickle.dump(sampler.chain[:, :, 8],open("br_1spot.p", 'wb'),protocol=-1)
 
+
+#median and quantiles
 ll1, ll2, pp, wnn, vcvc, vrvr, lclc, bcbc,brbr = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                              zip(*np.percentile(samples, [16, 50, 84],axis=0)))
 
+#printing results
 print()
 print('Aperiodic length scale = {0[0]} +{0[1]} -{0[2]}'.format(ll1))
 print('Periodic length scale = {0[0]} +{0[1]} -{0[2]}'.format(ll2))
@@ -131,6 +134,7 @@ print('Lc = {0[0]} +{0[1]} -{0[2]}'.format(lclc))
 print('Bc = {0[0]} +{0[1]} -{0[2]}'.format(bcbc))
 print('Br = {0[0]} +{0[1]} -{0[2]}'.format(brbr))
 
+#plotting the results
 print('graphics')
 fig, axes = plt.subplots(4, 1, sharex=True, figsize=(8, 9))
 axes[0].plot(np.exp(sampler.chain[:, burns:, 0]).T, color="k", alpha=0.4)
@@ -167,34 +171,4 @@ axes[4].yaxis.set_major_locator(MaxNLocator(5))
 axes[4].set_ylabel("$Br$")
 axes[4].set_xlabel("step number")
 fig.tight_layout(h_pad=0.0)
-plt.show()
-
-time = np.linspace(t.min(), t.max(), 1000)
-mu11, cov11, std11  = gpObj.predict_gp(time, a, b, model = 'rv')
-mu22, cov22, std22  = gpObj.predict_gp(time, a, b, model = 'bis')
-mu33, cov33, std33  = gpObj.predict_gp(time, a, b, model = 'rhk')
-
-f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
-ax1.set_title(' ')
-ax1.fill_between(time, mu11+std11, mu11-std11, color="grey", alpha=0.5)
-ax1.plot(time, mu11, "k--", alpha=1, lw=1.5)
-ax1.plot(t,rv,"b.")
-ax1.set_ylabel("RVs")
-
-ax2.fill_between(time, mu33+std33, mu33-std33, color="grey", alpha=0.5)
-ax2.plot(time, mu33, "k--", alpha=1, lw=1.5)
-ax2.plot(t,rhk,"b.")
-ax2.set_ylabel("flux")
-
-ax3.fill_between(time, mu22+std22, mu22-std22, color="grey", alpha=0.5)
-ax3.plot(time, mu22, "k--", alpha=1, lw=1.5)
-ax3.plot(t,bis,"b.")
-ax3.set_ylabel("BIS")
-ax3.set_xlabel("time")
-plt.show()
-
-f, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey = True, sharex = True)
-ax1.imshow(cov11)
-ax2.imshow(cov33)
-ax3.imshow(cov22)
 plt.show()
