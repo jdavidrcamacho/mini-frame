@@ -13,7 +13,7 @@ class SMALLgp(object):
     """ Initial class to create our Gaussian process.
     Parameters:
         kernel = kernel being used
-	extrakernel = Z(t) in Jones et al.
+        extrakernel = Z(t) in Jones et al.
         means = list of means being used, None if model doesn't use it
         t = time array
         *args = datasets data, it should be given as data1, data1_error, ...

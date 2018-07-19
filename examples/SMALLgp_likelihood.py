@@ -11,8 +11,7 @@ phase, flux, rv, bis = np.loadtxt("/home/joaocamacho/GitHub/mini-frame/miniframe
                                   skiprows=2, unpack=True, 
                                   usecols=(0, 1, 2, 3))
 t = 25.05 * phase
-l
-og_rhk = flux**2
+log_rhk = flux**2
 rv = 100*rv
 bis = 100*bis
 rhk = log_rhk

@@ -7,7 +7,7 @@ from time import time as tempo
 
 import numpy as np
 import matplotlib.pyplot as plt
-plt.close('all')
+#plt.close('all')
 
 
 ### 1ST STEP - data

@@ -18,7 +18,6 @@ class BIGgp(object):
         means = list of means being used, None if model doesn't use it
         t = time array
         rv, ..., sig_bis = data, datasets
-
     IMPORTANT DETAIL: Rajpaul et al. (2015) equations' order are RVs first,
                     then log(R_hk), and the BIS.
     """

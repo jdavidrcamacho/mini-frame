@@ -266,9 +266,11 @@ class QuasiPeriodic(kernel):
     Equation 27 in the paper.
 
     Parameters:
+        theta = kernel amplitude
         ell_e = evolutionary time scale
         ell_p = length scale of the periodic component
-        period
+        period = kernel periodicity
+        wn = white noise ampliitude
     """
     def __init__(self, ell_e, ell_p, period, wn):
         super(QuasiPeriodic, self).__init__(ell_e, ell_p, period, wn)
