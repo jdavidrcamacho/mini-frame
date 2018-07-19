@@ -120,7 +120,7 @@ class Sine(MeanModel):
     """
     _parsize = 3
     def __init__(self, amp, w, phi):
-        super(Cubic, self).__init__(amp, w, phi)
+        super(Sine, self).__init__(amp, w, phi)
 
     @array_input
     def __call__(self, t):
