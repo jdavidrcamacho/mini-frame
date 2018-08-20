@@ -7,7 +7,7 @@ from miniframe.means import Constant, Linear, Keplerian
 import numpy as np
 
 #Importing the data
-phase, flux, rv, bis = np.loadtxt("/home/joaocamacho/GitHub/mini-frame/miniframe/datasets/1spot_soap.rdb",
+phase, flux, rv, bis = np.loadtxt("/home/camacho/GitHub/mini-frame/miniframe/datasets/1spot_soap.rdb",
                                   skiprows=2, unpack=True, 
                                   usecols=(0, 1, 2, 3))
 t = 25.05 * phase

@@ -232,7 +232,7 @@ class BIGgp(object):
             yerr = True if measurements dataset has errors, False otherwise
             nugget = True if K is not positive definite, False otherwise
         Returns:
-            Big final matrix 
+            K = final covariance matrix 
         """
         if yerr:
             diag1 = self.rverr**2 * np.identity(self.t.size)
@@ -267,7 +267,7 @@ class BIGgp(object):
             b = array with the mean functions parameters
             y = values of the dependent variable (the measurements)
         Returns:
-            marginal log likelihood
+            log_like = marginal log likelihood
         """
         #calculate covariance matrix with kernel parameters a
         K = self.compute_matrix(a)
@@ -468,7 +468,9 @@ class BIGgp(object):
             b = array with the means parameters
             model = 'rv' or 'bis' or 'rhk' accordingly to the data we are using
         Returns:
-            mean vector, covariance matrix, standard deviation vector
+            y_mean = mean vector
+            y_std = standard deviation vector
+            y_cov = covariance matrix
         """
         kpars = self._kernel_pars(a)
 
@@ -513,7 +515,7 @@ class BIGgp(object):
         y_cov = Kstarstar - kstarT_k_kstar
         y_var = np.diag(y_cov) #variance
         y_std = np.sqrt(y_var) #standard deviation
-        return y_mean, y_cov, y_std
+        return y_mean, y_std, y_cov
 
 
 #Auxiliary functions

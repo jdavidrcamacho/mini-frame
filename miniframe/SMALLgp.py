@@ -255,7 +255,7 @@ class SMALLgp(object):
             c = array with the extrakernel parameters
             y = values of the dependent variable (the measurements)
         Returns:
-            Marginal log likelihood
+            log_like = Marginal log likelihood
         """
         #calculate covariance matrix with kernel parameters a
         K = self.compute_matrix(a, c)
@@ -322,7 +322,9 @@ class SMALLgp(object):
             model = 1,2,3,... accordingly to the data we are using, 1 represents
                     the first dataset, 2 the second data, etc...
         Returns:
-            mean vector, covariance matrix, standard deviation vector
+            y_mean = mean vector
+            y_std = standard deviation vector
+            y_cov = covariance matrix
         """
         print('Working with model {0}'.format(model))
         kpars = self._kernel_pars(a)
@@ -360,7 +362,7 @@ class SMALLgp(object):
         y_cov = Kstarstar - kstarT_k_kstar
         y_var = np.diag(y_cov) #variance
         y_std = np.sqrt(y_var) #standard deviation
-        return y_mean, y_cov, y_std
+        return y_mean, y_std, y_cov
 
 
 ### END

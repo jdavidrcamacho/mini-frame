@@ -13,7 +13,7 @@ plt.close('all')
 ### 1ST STEP - data
 
 #importing the data (to change accordingly)
-phase, flux, rv, bis = np.loadtxt("/home/joaocamacho/GitHub/mini-frame/miniframe/datasets/1spot_soap.rdb",
+phase, flux, rv, bis = np.loadtxt("/home/camacho/GitHub/mini-frame/miniframe/datasets/1spot_soap.rdb",
                                   skiprows=2, unpack=True, 
                                   usecols=(0, 1, 2, 3))
 
@@ -63,9 +63,9 @@ c = []
 time = np.linspace(0, 76, 1000)
 
 #Calculations of mean and std for plotting reasons
-mu11, cov11, std11  = gpObj.predict_gp(time, a, b, c, model = 1)
-mu22, cov22, std22  = gpObj.predict_gp(time, a, b, c, model = 2)
-mu33, cov33, std33  = gpObj.predict_gp(time, a, b, c, model = 3)
+mu11, std11, cov11  = gpObj.predict_gp(time, a, b, c, model = 1)
+mu22, std22, cov22  = gpObj.predict_gp(time, a, b, c, model = 2)
+mu33, std33, cov33  = gpObj.predict_gp(time, a, b, c, model = 3)
 
 #GP plots
 f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
