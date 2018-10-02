@@ -62,7 +62,7 @@ class SMALLgp(object):
         """ Returns the kernel parameters, X(t) in Jones et al. (2017) """
         if self.kernel.__name__ == 'SquaredExponential':
             l, wn = a[:2]
-            return [l]
+            return [l, wn]
         elif self.kernel.__name__ == 'QuasiPeriodic':
             lp, le, p, wn = a[:4]
             return [lp, le, p, wn]
@@ -73,8 +73,8 @@ class SMALLgp(object):
         if self.extrakernel is None:
             return []
         elif self.extrakernel.__name__ == 'SquaredExponential':
-            l = c[:2]
-            return [l]
+            l, wn = c[:2]
+            return [l, wn]
         elif self.extrakernel.__name__ == 'QuasiPeriodic':
             lp, le, p, wn = c[:4]
             return [lp, le, p, wn]
@@ -140,6 +140,7 @@ class SMALLgp(object):
         """ Creates the diagonal matrices used to create the big final matrix
         Parameters:
             a = array with the kernel parameters
+            c = extra kernel parameters
             x = time dataset
             position = position this kernel will have in the final matrix
         Return:
@@ -207,10 +208,11 @@ class SMALLgp(object):
         return f1 + f2 + f3 + f4
 
 
-    def compute_matrix(self, a, c, yerr=True, nugget=False):
+    def compute_matrix(self, a, c, yerr=True, nugget=True):
         """ Creates the big covariance matrix K
         Parameters:
             a = array with the kernel parameters
+            c = extra kernel parameters
             yerr = True if measurements dataset has errors, False otherwise
             nugget = True if K is not positive definite, False otherwise
         Returns:
@@ -270,6 +272,7 @@ class SMALLgp(object):
                        - np.sum(np.log(np.diag(L1[0]))) \
                        - 0.5*yy.size*np.log(2*np.pi)
         except LinAlgError:
+#            print('Ups I did it again')
             return -np.inf
         return log_like
 

@@ -7,13 +7,14 @@ from miniframe.means import Constant, Linear, Keplerian
 import numpy as np
 import emcee
 import matplotlib.pyplot as plt
+plt.close('all')
 import _pickle as pickle
 
 from matplotlib.ticker import MaxNLocator
 from scipy import stats
 
 #Importing the data
-phase, flux, rv, bis = np.loadtxt("/home/camacho/GitHub/mini-frame/miniframe/datasets/1spot_soap.rdb",
+phase, flux, rv, bis = np.loadtxt("/home/joaocamacho/GitHub/mini-frame/miniframe/datasets/1spot_soap.rdb",
                                   skiprows=2, unpack=True, 
                                   usecols=(0, 1, 2, 3))
 t = 25.05 * phase
@@ -56,8 +57,10 @@ def logprob(p):
 
             p[7] < -10, p[7] > np.log(100),
             p[8] < -10, p[8] > np.log(100),]):
+        print('ERROR ERROR ERROR')
         return -np.inf
     logprior = 0.0
+    print(gpObj.log_likelihood(np.exp(p), []))
     return logprior + gpObj.log_likelihood(np.exp(p), [])
 
 

@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 ### 1ST STEP - data
 
 #importing the data (to change accordingly)
-phase, flux, rv, bis = np.loadtxt("/home/camacho/GitHub/mini-frame/miniframe/datasets/1spot_soap.rdb",
+phase, flux, rv, bis = np.loadtxt("/home/joaocamacho/GitHub/mini-frame/miniframe/datasets/1spot_soap.rdb",
                                   skiprows=2, unpack=True, 
                                   usecols=(0, 1, 2, 3))
 
@@ -53,9 +53,9 @@ gpObj = BIGgp(kernels.QuasiPeriodic,[Constant, Constant, Constant] , t=t,
 #kernel (a) and mean funtions (b) parameters, check Rajpaul et al. for more
 #a = [kernel le, kernel lp, kernel period, white noise, vc, vr, lc, bc, br]
 a = [1083.1091125670669, 1.215034890646895, 25.07312864134963, 0.031950873139068185,
-     6.064550597545819, 4.23391412490362, 
-     0.3552833092394814, 
-     12.807709071739335, 9.755026033334879]
+     6.064550597545819, 0*4.23391412490362, 
+     0*0.3552833092394814, 
+     0*12.807709071739335, 0*9.755026033334879]
 #b = [constant, constant, contant]
 b = [0, 0, 0]
 
