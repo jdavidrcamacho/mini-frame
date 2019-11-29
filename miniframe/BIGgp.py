@@ -12,19 +12,25 @@ from miniframe.kernels import SquaredExponential
 flatten = lambda l: [item for sublist in l for item in sublist]
 
 class BIGgp(object):
-    """ Big initial class to create our Gaussian process.
-    Parameters:
-        kernel = kernel being used
-        means = list of means being used, None if model doesn't use it
-        t = time array
-        rv, ..., sig_bis = data, datasets
+    """
+    Big initial class to create our Gaussian process.
+    
+    Parameters
+    ----------
+    kernel: array
+        Array with the kernel used
+    means: array
+        Means used, None if model doesn't use it
+    t: array
+        Time array
+    rv, ..., sig_bis: arrays
+        Arrays of our data
+    
     IMPORTANT DETAIL: Rajpaul et al. (2015) equations' order are RVs first,
                     then log(R_hk), and the BIS.
     """
-    def __init__(self, kernel, means, t, 
-                 rv, rverr, rhk, sig_rhk, bis, sig_bis):
+    def __init__(self, kernel, means, t, rv, rverr, rhk, sig_rhk, bis, sig_bis):
         self.kernel = kernel
-
         self.means = means
         self._mean_pars = []
         for i, m in enumerate(self.means):
@@ -32,9 +38,7 @@ class BIGgp(object):
                 continue
             self.means[i] = m.initialize()
             self._mean_pars.append(self.means[i].pars)
-
         self._mean_pars = flatten(self._mean_pars)
-
         self.dKdt1, self.dKdt2, self.ddKdt2dt1, self.dddKdt2ddt1, \
             self.dddKddt2dt1, self.ddddKddt2ddt1 = self.kernel.__subclasses__()
         self.t = t              #time
@@ -45,7 +49,6 @@ class BIGgp(object):
         self.bis = bis          #bisector inverse slope
         self.sig_bis = sig_bis
         self.L = 2
-
         self.y = np.concatenate([rv, bis, rhk])
         self.yerr = np.concatenate([rverr, sig_bis, sig_rhk])
         self.tt = np.tile(t, self.L+1)
@@ -54,16 +57,22 @@ class BIGgp(object):
             self.tplot.append(self.t + 1.5*self.t.ptp()*i)
         self.tplot = np.array(self.tplot).flatten()
 
-
     @classmethod
     def from_rdb(cls, filename, kernel=SquaredExponential, **kwargs):
-        """ Create class from a .rdb file
-        Arguments:
-            filename
-            kernel (optional)
-            usecols = tuple with columns of the file to read into t, rv, rverr, bis, rhk, sig_rhk
-                      (uncertainty in bis is 2*rverr)
-            skiprows = number of rows to skip (default 2)
+        """
+        Create class from a .rdb file
+        
+        Parameters
+        ----------
+        filename: string
+            Name of the file
+        kernel: ?
+            (optional)
+        usecols: tuple
+            Tuple with columns of the file to read into t, rv, rverr, bis, rhk,
+            sig_rhk (uncertainty in bis is 2*rverr)
+        skiprows: int
+            Number of rows to skip (default 2)
         """
         skip = kwargs.get('skiprows', 2)
         kwargs.get('unpack')
@@ -108,7 +117,6 @@ class BIGgp(object):
             return [lp, le, p, wn]
 #            lp, le, p, vc, vr, lc, bc, br = a
 #            return [lp, le, p]
-
 
     @property
     def mean_pars_size(self):
@@ -226,13 +234,22 @@ class BIGgp(object):
 
 
     def compute_matrix(self, a, yerr=True, nugget=False):
-        """ Creates the big covariance matrix K, equations 24 in the paper 
-        Parameters:
-            a = array with the kernel parameters
-            yerr = True if measurements dataset has errors, False otherwise
-            nugget = True if K is not positive definite, False otherwise
-        Returns:
-            K = final covariance matrix 
+        """
+        Creates the big covariance matrix K, equations 24 in the paper 
+        
+        Parameters
+        ----------
+        a: array
+            Array with the kernel parameters
+        yerr: bool
+            True if measurements dataset has errors, False otherwise
+        nugget: bool
+            True if K is not positive definite, False otherwise
+        
+        Returns
+        -------
+        K: array
+            Final covariance matrix 
         """
         if yerr:
             diag1 = self.rverr**2 * np.identity(self.t.size)
@@ -261,13 +278,22 @@ class BIGgp(object):
 
 
     def log_likelihood(self, a, b, nugget = True):
-        """ Calculates the marginal log likelihood. 
-        Parameters:
-            a = array with the kernel parameters
-            b = array with the mean functions parameters
-            y = values of the dependent variable (the measurements)
-        Returns:
-            log_like = marginal log likelihood
+        """
+        Calculates the marginal log likelihood. 
+        
+        Parameters
+        ----------
+        a: array
+            Array with the kernel parameters
+        b: array 
+            Array with the mean functions parameters
+        nugget: bool
+            True if K is not positive definite, False otherwise
+            
+        Returns
+        -------
+        log_like: float
+            Marginal log likelihood
         """
         #calculate covariance matrix with kernel parameters a
         K = self.compute_matrix(a)
@@ -291,10 +317,16 @@ class BIGgp(object):
 
 
     def sample(self, a):
-        """ Sample from final K, see equation (24) 
-        Parameters:
-            a = array with the kernel parameters
+        """
+        Sample from final K, see equation (24) 
+        
+        Parameters
+        ----------
+        a: array
+            Array with the kernel parameters
+        
         Returns:
+        array
             Sample of K 
         """
         mean = np.zeros_like(self.tt)
@@ -304,11 +336,18 @@ class BIGgp(object):
 
 
     def sample_from_G(self, a):
-        """ Sample from the gaussian process G(t), 
-        see equations (13), (14), and (15)
-        Parameters:
-            a = array with the kernel parameters
-        Returns:
+        """
+        Sample from the gaussian process G(t), see equations (13), (14), 
+        and (15)
+        
+        Parameters
+        ----------
+        a: array
+            Array with the kernel parameters
+        
+        Returns
+        -------
+        array
             Sample vector
         """
         kpars = self._kernel_pars(a)
@@ -318,11 +357,18 @@ class BIGgp(object):
 
 
     def sample_from_Gdot(self, a):
-        """ Sample from the Gaussian process Gdot(t),
-        see equations (13), (14), and (15)
-        Parameters:
-            a = array with the kernel parameters
-        Returns:
+        """
+        Sample from the Gaussian process Gdot(t), see equations (13), (14),
+        and (15)
+        
+        Parameters
+        ----------
+        a: array
+            Array with the kernel parameters
+        
+        Returns
+        -------
+        array
             Sample vector
         """
         kpars = self._kernel_pars(a)
@@ -332,13 +378,24 @@ class BIGgp(object):
 
 
     def predict_G(self, time, y, a):
-        """ Predition of the Gaussian process G(t)
-        Parameters:
-            time = values where the predictive distribution will be calculated
-            y = values of the dependent variable (the measurements)
-            a = array with the kernel parameters
-        Returns:
-            mean vector, covariance matrix
+        """ 
+        Predition of the Gaussian process G(t)
+        
+        Parameters
+        ----------
+        time: array
+            Values where the predictive distribution will be calculated
+        y: array
+            Values of the dependent variable (the measurements)
+        a: array
+            Array with the kernel parameters
+        
+        Returns
+        -------
+        y_mean: array
+            Mean vector
+        y_cov: array
+            Covariance matrix
         """
         tstar = time[:, None] - self.t[None, :]
         kpars = self._kernel_pars(a)
@@ -363,13 +420,24 @@ class BIGgp(object):
         return y_mean, y_cov
 
     def predict_Gdot(self, time, y, a):
-        """ Predition of the Gaussian process Gdot(t), the derivative of G(t)
-        Parameters:
-            time = values where the predictive distribution will be calculated
-            y = values of the dependent variable (the measurements)
-            a = array with the kernel parameters
-        Returns:
-            mean vector, covariance matrix
+        """
+        Predition of the Gaussian process Gdot(t), the derivative of G(t)
+        
+        Parameters
+        ----------
+        time: array
+            Values where the predictive distribution will be calculated
+        y: array
+            Values of the dependent variable (the measurements)
+        a: array
+            Array with the kernel parameters
+        
+        Returns
+        -------
+        y_mean: array
+            Mean vector
+        y_cov: array
+            Covariance matrix
         """
         tstar = time[:, None] - self.t[None, :]
         kpars = self._kernel_pars(a)
@@ -395,13 +463,24 @@ class BIGgp(object):
 
 
     def predict_rv(self, time, a):
-        """ Conditional predictive distribution for the RVs
-        Parameters:
-            time = values where the predictive distribution will be calculated
-            y = values of the dependent variable (the measurements)
-            a = array with the kernel parameters
-        Returns:
-            mean vector, covariance matrix, standard deviation vector
+        """
+        Conditional predictive distribution for the RVs
+        
+        Parameters
+        ----------
+        time: array
+            Values where the predictive distribution will be calculated
+        a: array
+            Array with the kernel parameters
+        
+        Returns
+        -------
+        mean: array
+            Mean vector
+        covariance: array
+            Covariance matrix
+        std: array
+            Standard deviation vector
         """
         mu, cov = self.predict_G(time, self.rv, a)
         mudot, covdot = self.predict_Gdot(time, self.rv, a)
@@ -413,13 +492,24 @@ class BIGgp(object):
 
 
     def predict_rhk(self, time, a):
-        """ Conditional predictive distribution for the log(R_hk)
-        Parameters:
-            time = values where the predictive distribution will be calculated
-            y = values of the dependent variable (the measurements)
-            a = array with the kernel parameters
-        Returns:
-            mean vector, covariance matrix, standard deviation vector
+        """
+        Conditional predictive distribution for the log(R_hk)
+        
+        Parameters
+        ----------
+        time: array
+            Values where the predictive distribution will be calculated
+        a: array
+            Array with the kernel parameters
+        
+        Returns
+        -------
+        mean: array
+            Mean vector
+        covariance: array
+            Covariance matrix
+        std: array
+            Standard deviation vector
         """
         mu, cov = self.predict_G(time, self.rhk, a)
         vc, vr, lc, bc, br = self._scaling_pars(a)
@@ -430,13 +520,24 @@ class BIGgp(object):
 
 
     def predict_bis(self, time, a):
-        """ Conditional predictive distribution for the BIS
-        Parameters:
-            time = values where the predictive distribution will be calculated
-            y = values of the dependent variable (the measurements)
-            a = array with the kernel parameters
-        Returns:
-            mean vector, covariance matrix, standard deviation vector
+        """
+        Conditional predictive distribution for the BIS
+        
+        Parameters
+        ----------
+        time: array
+            Values where the predictive distribution will be calculated
+        a: array
+            Array with the kernel parameters
+        
+        Returns
+        -------
+        mean: array
+            Mean vector
+        covariance: array
+            Covariance matrix
+        std: array
+            Standard deviation vector
         """
         mu, cov = self.predict_G(time, self.bis, a)
         mudot, covdot = self.predict_Gdot(time, self.bis, a)
@@ -448,10 +549,16 @@ class BIGgp(object):
 
 
     def show_matrix(self, x):
-        """ Plot of the covariance matrix x 
-        Parameters:
-            x = matrix
-        Returns:
+        """
+        Plot of the covariance matrix x
+        
+        Parameters
+        ----------
+        x: array
+            Matrix
+            
+        Returns
+        -------
             Matrix plot
         """
         plt.figure()
@@ -460,17 +567,28 @@ class BIGgp(object):
 
 
     def predict_gp(self, time, a, b, model = 'rv'):
-        """ Conditional predictive distribution of the Gaussian process
-        Parameters:
-            time = values where the predictive distribution will be calculated
-            y = values of the dependent variable (the measurements)
-            a = array with the kernel parameters
-            b = array with the means parameters
-            model = 'rv' or 'bis' or 'rhk' accordingly to the data we are using
-        Returns:
-            y_mean = mean vector
-            y_std = standard deviation vector
-            y_cov = covariance matrix
+        """
+        Conditional predictive distribution of the Gaussian process
+        
+        Parameters
+        ----------
+        time: array
+            Values where the predictive distribution will be calculated
+        a: array
+            Array with the kernel parameters
+        b: array
+            Array with the means parameters
+        model: string
+            'rv' or 'bis' or 'rhk' accordingly to the data we are using
+        
+        Returns
+        -------
+        y_mean: array
+            Mean vector
+        y_std: array
+            Standard deviation vector
+        y_cov: array
+            Covariance matrix
         """
         kpars = self._kernel_pars(a)
 
