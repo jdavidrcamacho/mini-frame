@@ -234,7 +234,7 @@ class BIGgp(object):
         return lc*bc*gammagg + lc*br*gammagdg
 
 
-    def compute_matrix(self, a, yerr=True, nugget=False):
+    def compute_matrix(self, a, j, yerr=True, nugget=False):
         """
         Creates the big covariance matrix K, equations 24 in the paper 
         
@@ -260,9 +260,13 @@ class BIGgp(object):
             diag1 = 1e-12 * np.identity(self.t.size)
             diag2 = diag3 = diag1
 
-        K11 = self.k11(a, self.t) + diag1
-        K22 = self.k22(a, self.t) + diag2
-        K33 = self.k33(a, self.t) + diag3
+        jitter1 = j[0]**2 * np.identity(self.t.size)
+        jitter2 = j[1]**2 * np.identity(self.t.size)
+        jitter3 = j[2]**2 * np.identity(self.t.size)
+
+        K11 = self.k11(a, self.t) + diag1 +jitter1
+        K22 = self.k22(a, self.t) + diag2 +jitter2 
+        K33 = self.k33(a, self.t) + diag3 +jitter3
         K12 = self.k12(a, self.t)
         K13 = self.k13(a, self.t)
         K23 = self.k23(a, self.t)
@@ -278,7 +282,7 @@ class BIGgp(object):
         return K
 
 
-    def log_likelihood(self, a, b, nugget = True):
+    def log_likelihood(self, a, b, c, nugget = True):
         """
         Calculates the marginal log likelihood. 
         
@@ -288,6 +292,8 @@ class BIGgp(object):
             Array with the kernel parameters
         b: array 
             Array with the mean functions parameters
+        c: array 
+            Array with jitter to add to each k
         nugget: bool
             True if K is not positive definite, False otherwise
             
@@ -297,7 +303,7 @@ class BIGgp(object):
             Marginal log likelihood
         """
         #calculate covariance matrix with kernel parameters a
-        K = self.compute_matrix(a)
+        K = self.compute_matrix(a, c)
         #calculate mean and residuals with mean parameters b
         self.mean_pars = b
         r = self.y - self.mean()
@@ -567,7 +573,7 @@ class BIGgp(object):
         plt.show()
 
 
-    def predict_gp(self, time, a, b, model = 'rv'):
+    def predict_gp(self, time, a, b, c, model = 'rv'):
         """
         Conditional predictive distribution of the Gaussian process
         
@@ -579,6 +585,8 @@ class BIGgp(object):
             Array with the kernel parameters
         b: array
             Array with the means parameters
+        j: array
+            Array with the jitter terms for each time series
         model: string
             'rv' or 'bis' or 'rhk' accordingly to the data we are using
         
@@ -600,35 +608,35 @@ class BIGgp(object):
 
         if model == 'rv':
             print('Working with RVs')
-            cov = self.k11(a, self.t)
+            cov = self.k11(a, self.t) + c[0]**2 * np.identity(self.t.size)
             L1 = cho_factor(cov)
             sol = cho_solve(L1, new_y[0])
             tstar = time[:, None] - self.t[None, :]
             vc, vr, _, _, _ = self._scaling_pars(a)
             Kstar = vc*vc*self.kernel(*kpars)(tstar) + vr*vr*self.ddKdt2dt1(*kpars)(tstar) \
                     + vc*vr*(self.dKdt1(*kpars)(tstar) + self.dKdt2(*kpars)(tstar))
-            Kstarstar = self.k11(a, time)
+            Kstarstar = self.k11(a, time) + c[0]**2 * np.identity(time.size)
             meanVal = self.means[0](time)
         if model == 'rhk':
             print('Working with log(Rhk)')
-            cov = self.k22(a, self.t)
+            cov = self.k22(a, self.t) +c[2]**2 * np.identity(self.t.size)
             L1 = cho_factor(cov)
             sol = cho_solve(L1, new_y[2])
             tstar = time[:, None] - self.t[None, :]
             _, _, lc, _, _ = self._scaling_pars(a)
             Kstar = lc*lc*self.kernel(*kpars)(tstar)
-            Kstarstar = self.k22(a, time)
+            Kstarstar = self.k22(a, time) + c[2]**2 * np.identity(time.size)
             meanVal = self.means[2](time)
         if model == 'bis':
             print('Working with BIS')
-            cov = self.k33(a, self.t)
+            cov = self.k33(a, self.t) + c[1]**2 * np.identity(self.t.size)
             L1 = cho_factor(cov)
             sol = cho_solve(L1, new_y[1])
             tstar = time[:, None] - self.t[None, :]
             _, _, _, bc, br = self._scaling_pars(a)
             Kstar = bc*bc*self.kernel(*kpars)(tstar) + br*br*self.ddKdt2dt1(*kpars)(tstar) \
                     + bc*br*(self.dKdt1(*kpars)(tstar) + self.dKdt2(*kpars)(tstar))
-            Kstarstar = self.k33(a, time)
+            Kstarstar = self.k33(a, time) + c[1]**2 * np.identity(time.size)
             meanVal = self.means[1](time)
 
         y_mean = np.dot(Kstar, sol) + meanVal
