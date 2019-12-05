@@ -186,13 +186,13 @@ class Keplerian(MeanModel):
 
     RV = K[cos(w+v) + e*cos(w)]
     """
-    _parsize = 5
-    def __init__(self, P, K, e, w, phi):
-        super(Keplerian, self).__init__(P, K, e, w, phi)
+    _parsize = 6
+    def __init__(self, P, K, e, w, phi, offset):
+        super(Keplerian, self).__init__(P, K, e, w, phi, offset)
 
     @array_input
     def __call__(self, t):
-        P, K, e, w, phi = self.pars
+        P, K, e, w, phi, offset = self.pars
         #mean anomaly
         T0 = t[0] - (P*phi)/(2.*np.pi)
         Mean_anom = 2*np.pi*(t-T0)/P
@@ -212,7 +212,7 @@ class Keplerian(MeanModel):
             M0 = M1
 
         nu = 2*np.arctan(np.sqrt((1+e)/(1-e))*np.tan(E0/2))
-        RV = K*(e*np.cos(w)+np.cos(w+nu))
+        RV = K*(e*np.cos(w)+np.cos(w+nu)) + offset
         return RV
 
 class TOI175keplerians(MeanModel):
